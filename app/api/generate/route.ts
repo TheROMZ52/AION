@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { compileAion, parseAion } from "@/lib/aion";
+import { compileAion } from "@/lib/aion";
 
 const SYSTEM_PROMPT = `You are AION Compiler 1.2 — a semantic compiler, not a generic prompt generator.
 
@@ -65,6 +65,8 @@ CANONICAL SHAPE
   }
 
 ⟫
+
+IMPORTANT: All sections are optional. Emit only sections that have semantic content. An empty REACT or PRIME section is valid to omit. MIND/VOICE/BOND are also omitted when there is no corresponding requirement.
 
 CLASSIFICATION RULES
 Every meaningful user instruction MUST be classified into one or more of these layers:
@@ -137,6 +139,7 @@ E. Conditional behavior is represented in REACT.
 F. Numeric MIND values are integers 0–100.
 G. Header, blocks, operators, and closing marker follow canonical AION syntax.
 H. No Markdown or natural-language commentary appears in output.
+I. Empty semantic sections are omitted rather than fabricated.
 
 Compile, do not explain.`;
 
@@ -151,15 +154,10 @@ function normalizeAion(output: string) {
 }
 
 function compileGeneratedAion(source: string) {
-  const required = ["⟪AION::1⟫", "ᚫ AI", "◉ MIND", "◉ VOICE", "◉ BOND", "◉ REACT", "◉ PRIME"];
-  if (!required.every((token) => source.includes(token))) return undefined;
   if (!source.startsWith("⟪AION::1⟫") || !source.endsWith("⟫")) return undefined;
 
   const numbers = [...source.matchAll(/::\s*(-?\d+)/g)].map((match) => Number(match[1]));
   if (numbers.some((value) => value < 0 || value > 100)) return undefined;
-
-  const parsed = parseAion(source);
-  if (!parsed.ast) return undefined;
 
   const compiled = compileAion(source);
   if (compiled.diagnostics.some((diagnostic) => diagnostic.severity === "error") || !compiled.ir || !compiled.prompt) return undefined;
