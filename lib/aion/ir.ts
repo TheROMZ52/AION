@@ -1,13 +1,4 @@
-import {
-  AionAssignment,
-  AionBond,
-  AionMemoryRule,
-  AionPersonaRule,
-  AionPreference,
-  AionPrimeRule,
-  AionProgram,
-  AionReaction,
-} from "./ast";
+import { AionAssignment, AionBond, AionProgram } from "./ast";
 
 /** Canonical semantic representation used by later compiler stages. */
 export interface AionIR {
@@ -53,9 +44,7 @@ export interface AionCondition {
   selector: string;
 }
 
-export type AionAction =
-  | AionSetAction
-  | AionDirectiveAction;
+export type AionAction = AionSetAction | AionDirectiveAction;
 
 export interface AionSetAction {
   kind: "action";
@@ -156,6 +145,7 @@ function parseConditionalRule(expression: string): AionConditionalRule | undefin
   };
 }
 
+/** Split action lists while ignoring commas inside [] expressions. */
 function splitActions(expression: string): string[] {
   const actions: string[] = [];
   let current = "";
@@ -227,7 +217,7 @@ function parsePreferenceRule(expression: string): AionPreferenceRule {
     return { kind: "preference", target: normalizePreferenceTarget(shorthand[1]), value: parseScalar(shorthand[2]), scope: "user" };
   }
 
-  return { kind: "preference", target: expression, value: true as unknown as string, scope: "user" };
+  return { kind: "preference", target: expression, value: "", scope: "user" };
 }
 
 function normalizePreferenceTarget(target: string): string {
@@ -292,9 +282,3 @@ function lowerBond(bond: AionBond): AionIR["bond"] {
     ...(bond.distance !== undefined ? { distance: bond.distance } : {}),
   };
 }
-
-export type AionIRReaction = AionReaction;
-export type AionIRPreference = AionPreference;
-export type AionIRMemoryRule = AionMemoryRule;
-export type AionIRPersonaRule = AionPersonaRule;
-export type AionIRPrimeRule = AionPrimeRule;
