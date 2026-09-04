@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Create deployment failure notification
+      - name: Create or update deployment failure notification
         uses: actions/github-script@v7
         with:
           script: |
@@ -25,6 +25,14 @@ jobs:
             const targetUrl = status.target_url || deployment.target_url || '';
             const logUrl = status.log_url || deployment.log_url || '';
 
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100,
+            });
+
+            const existing = issues.find(issue => issue.title.startsWith('🚨 Vercel deployment failed:'));
             const title = `🚨 Vercel deployment failed: ${commit.slice(0, 7)}`;
             const body = [
               '## Vercel deployment failed',
@@ -35,18 +43,27 @@ jobs:
               `- **Deployment:** ${targetUrl || 'Not provided'}`,
               `- **Logs:** ${logUrl || 'Not provided'}`,
               '',
-              'This issue was created automatically by the Vercel deployment check.',
-              'Check the Vercel build/deployment logs for the exact failure.'
+              'This issue tracks the current Vercel deployment failure.'
             ].join('\n');
 
-            await github.rest.issues.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title,
-              body
-            });
+            if (existing) {
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existing.number,
+                title,
+                body,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+              });
+            }
 
       - name: Fail the GitHub check
         run: |
-          echo "Vercel deployment failed. See the automatically created GitHub issue and Vercel logs."
+          echo "Vercel deployment failed. See the current deployment issue and Vercel logs."
           exit 1
