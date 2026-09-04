@@ -17,12 +17,16 @@ export interface AionIR {
   mind: Record<string, number>;
   voice: Record<string, string | number>;
   bond: { relationship?: string; distance?: number };
+  /** Evaluation order: stable baseline first, contextual overrides last. */
+  precedence: readonly AionIRLayer[];
   reactions: AionIRRule[];
   preferences: AionIRRule[];
   memory: AionIRRule[];
   persona: AionIRRule[];
   prime: AionIRRule[];
 }
+
+export type AionIRLayer = "MIND" | "VOICE" | "BOND" | "PREF" | "MEMORY" | "PERSONA" | "PRIME" | "REACT";
 
 /** A typed rule. The original expression is retained for lossless canonical printing. */
 export interface AionIRRule {
@@ -141,6 +145,8 @@ export function lowerToIR(ast: AionProgram): AionIR {
     mind: numericMind,
     voice,
     bond: lowerBond(ast.bond),
+    // REACT is deliberately last: it overrides the stable baseline without mutating it.
+    precedence: ["MIND", "VOICE", "BOND", "PREF", "MEMORY", "PERSONA", "PRIME", "REACT"],
     reactions: rules(ast.react),
     preferences: rules(ast.pref),
     memory: rules(ast.memory),
