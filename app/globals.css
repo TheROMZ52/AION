@@ -7,7 +7,9 @@ button { cursor: pointer; }
 .shell { min-height: 100vh; overflow: hidden; background: radial-gradient(circle at 50% 5%, #17131f 0, #09090c 28%, #07080b 65%); }
 .nav { height: 76px; max-width: 1180px; margin: auto; padding: 0 28px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #1b1d23; }
 .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; letter-spacing: .18em; font-size: 15px; }
-.brand-mark { width: 30px; height: 30px; display: grid; place-items: center; border: 1px solid #6f35ff; border-radius: 8px; color: #b995ff; box-shadow: 0 0 24px #5c21b633; }
+.brand-mark { width: 32px; height: 32px; display: grid; place-items: center; border: 1px solid #6f35ff66; border-radius: 10px; background: radial-gradient(circle at 30% 15%, #b77cff18, transparent 62%), #0d0a15; box-shadow: 0 0 24px #5c21b633, inset 0 0 16px #9b65ff0d; overflow: hidden; transition: transform .2s ease, box-shadow .2s ease; }
+.brand-mark svg { width: 29px; height: 29px; display: block; }
+.brand:hover .brand-mark { transform: rotate(-4deg) scale(1.06); box-shadow: 0 0 30px #8a55f755, inset 0 0 18px #9b65ff18; }
 .nav-links { display: flex; gap: 32px; color: #888b95; font-size: 13px; }
 .nav-links a:hover { color: #fff; }
 .nav-actions { display: flex; align-items: center; gap: 8px; }
@@ -59,3 +61,4 @@ h2 { font-size: clamp(38px, 5vw, 62px); letter-spacing: -.05em; line-height: 1; 
 .steps p { margin: 0; color: #6f727c; font-size: 12px; line-height: 1.7; }
 footer { max-width: 1180px; margin: auto; padding: 28px; border-top: 1px solid #17191f; display: flex; justify-content: space-between; color: #4e515a; font-size: 10px; }
 @media (max-width: 760px) { .nav-links { display: none; } .nav { padding: 0 18px; } .hero { padding-top: 90px; } .hero-actions { flex-direction: column; align-items: stretch; } .workspace { grid-template-columns: 1fr; gap: 12px; } .arrow { transform: rotate(90deg); } .steps { grid-template-columns: 1fr; } footer { flex-direction: column; gap: 16px; } }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .brand-mark, .generate { transition: none; } }
