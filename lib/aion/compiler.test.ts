@@ -57,7 +57,7 @@ describe("compileAion", () => {
 
     assert.match(result.prompt ?? "", /AION RUNTIME CONTRACT v1/);
     assert.match(result.prompt ?? "", /no humor, then increase Empathy by 20, then short/);
-    assert.match(result.prompt ?? "", /Honor this user preference: NAMING = MAHBOD/);
-    assert.match(result.prompt ?? "", /Follow this memory instruction: USER NAME keep/);
+    assert.match(result.prompt ?? "", /Honor this user preference: Naming = MAHBOD/);
+    assert.match(result.prompt ?? "", /Follow this memory instruction: USER Name keep/);
   });
 });
