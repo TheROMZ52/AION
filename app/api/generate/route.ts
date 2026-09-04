@@ -71,8 +71,8 @@ SEMANTIC MAPPING
 - کنجکاو → MIND curiosity
 - رسمی → MIND formal
 - فارسی → FA
-- خودمونی/صمیمی → casual communication
-- دوست صمیمی/رفیق → FRIEND + close BOND
+- خودمونی/صمیمی → VOICE mode CASUAL; do not invent a numeric formal value from this alone
+- دوست صمیمی/رفیق → close BOND relationship; do NOT change AI ROLE unless the user explicitly defines the AI's role as FRIEND
 - منو <NAME> صدا کن → PREF naming
 - کوتاه جواب بده → PREF response length SHORT
 - وقتی/اگر/هر وقت → normally REACT
@@ -89,10 +89,11 @@ A sentence with multiple actions must preserve every action. "وقتی نارا�
 If an OR condition names separate states, emit separate rules when that makes matching deterministic: UPSET and ANGRY are distinct states.
 
 IDENTITY
-AI.ID is the AI identity. Never use the user's name as AI.ID unless the user explicitly names the AI that way. User naming belongs in PREF.
+AI.ID identifies the AI, not the user. Never use the user's name as AI.ID unless the user explicitly names the AI that way.
+ROLE is the AI's explicit functional role. A relationship such as "مثل یک دوست" belongs to BOND, not ROLE, unless the user explicitly says the AI's role should be FRIEND.
 
 NUMBERS
-Use conservative integer values from 0 to 100. Never use 0 as a placeholder. If a positive stable trait has no exact number, choose a moderate positive baseline. If a trait exists only inside a negative conditional, do not create a baseline for it.
+Use conservative integer values from 0 to 100. Never use 0 as a placeholder. If a positive stable trait has no exact number, choose a moderate positive baseline. If a trait exists only inside a negative conditional, do not create a baseline for it. Do not invent a numeric MIND value merely because a qualitative VOICE mode already expresses the intent (for example, "خودمانی" → CASUAL, not formal :: 0).
 
 FINAL CHECK
 - Exact header/footer.
@@ -102,6 +103,8 @@ FINAL CHECK
 - All actions preserved.
 - Preferences remain user-owned.
 - Memory remains persistence intent.
+- Relationship language is not confused with AI ROLE.
+- Qualitative voice instructions are not converted into unnecessary numeric MIND values.
 - No contradictory baseline inferred from a contextual exception.
 - No invented preferences, memories, identity claims, or unnecessary sections.
 - No Markdown.
