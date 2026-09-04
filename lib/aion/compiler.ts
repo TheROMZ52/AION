@@ -2,16 +2,18 @@ import { analyzeAion } from "./semantic";
 import { lowerToIR, AionIR } from "./ir";
 import { parseAion } from "./parser";
 import { printAion } from "./printer";
+import { compileAionPrompt } from "./prompt";
 
 export interface AionCompileResult {
   source: string;
   ir?: AionIR;
+  prompt?: string;
   diagnostics: ReturnType<typeof analyzeAion>;
 }
 
 /**
  * Full deterministic AION compiler pipeline:
- * source -> parser -> AST -> semantic analysis -> canonical IR -> printer.
+ * source -> parser -> AST -> semantic analysis -> canonical IR -> printer -> prompt.
  */
 export function compileAion(source: string): AionCompileResult {
   const parsed = parseAion(source);
@@ -28,6 +30,7 @@ export function compileAion(source: string): AionCompileResult {
   return {
     source: printAion(ir),
     ir,
+    prompt: compileAionPrompt(ir),
     diagnostics,
   };
 }
