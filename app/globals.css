@@ -1,6 +1,6 @@
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
-body { margin: 0; background: #07080b; color: #f3f4f6; font-family: Arial, Helvetica, sans-serif; }
+body { margin: 0; background: #07080b; color: #f3f4f6; font-family: var(--font-vazirmatn), Arial, Helvetica, sans-serif; }
 a { color: inherit; text-decoration: none; }
 button, textarea { font: inherit; }
 button { cursor: pointer; }
@@ -11,9 +11,11 @@ button { cursor: pointer; }
 .brand-mark svg { width: 29px; height: 29px; display: block; }
 .brand:hover .brand-mark { transform: rotate(-4deg) scale(1.06); box-shadow: 0 0 30px #8a55f755, inset 0 0 18px #9b65ff18; }
 .nav-links { display: flex; gap: 32px; color: #888b95; font-size: 13px; }
+.nav-links a { transition: color .18s ease; }
 .nav-links a:hover { color: #fff; }
 .nav-actions { display: flex; align-items: center; gap: 8px; }
-.ghost, .secondary, .output-foot button, .lang { background: transparent; color: #a5a8b2; border: 1px solid #292c34; border-radius: 8px; padding: 10px 15px; }
+.ghost, .secondary, .output-foot button, .lang { background: transparent; color: #a5a8b2; border: 1px solid #292c34; border-radius: 8px; padding: 10px 15px; transition: border-color .18s ease, color .18s ease, background .18s ease, transform .18s ease; }
+.ghost:hover, .secondary:hover, .output-foot button:hover, .lang:hover { border-color: #464a56; color: #eee; background: #ffffff05; transform: translateY(-1px); }
 .lang { padding: 10px 11px; color: #b995ff; font-size: 10px; font-weight: 700; }
 .hero { max-width: 980px; margin: auto; padding: 125px 28px 105px; text-align: center; }
 .eyebrow, .section-label { color: #8f94a1; font-size: 10px; letter-spacing: .2em; font-weight: 700; }
@@ -23,22 +25,25 @@ h1 { margin: 22px 0 20px; font-size: clamp(55px, 8vw, 92px); line-height: .94; l
 em { color: #9d68ff; font-style: normal; }
 .hero p { max-width: 590px; margin: 0 auto; color: #92959f; line-height: 1.7; font-size: 16px; }
 .hero-actions { margin-top: 35px; display: flex; justify-content: center; gap: 12px; }
-.primary { padding: 13px 19px; border-radius: 9px; background: #eee; color: #0b0b0e; font-size: 13px; font-weight: 700; }
+.primary { padding: 13px 19px; border-radius: 9px; background: #eee; color: #0b0b0e; font-size: 13px; font-weight: 700; transition: transform .18s ease, box-shadow .18s ease; }
+.primary:hover { transform: translateY(-1px); box-shadow: 0 10px 28px #00000055; }
 .primary span { margin-inline-start: 18px; }
 .studio, .how { max-width: 1180px; margin: auto; padding: 25px 28px 115px; }
 .section-label span { color: #555963; margin-inline-end: 12px; }
 .workspace { margin-top: 18px; display: grid; grid-template-columns: 1fr 34px 1fr; align-items: stretch; }
-.panel { border: 1px solid #20232b; background: #0d0f13cc; border-radius: 13px; min-height: 450px; overflow: hidden; box-shadow: 0 20px 60px #00000022; }
+.panel { border: 1px solid #20232b; background: linear-gradient(145deg, #101217e8, #0b0d11e8); border-radius: 13px; min-height: 450px; overflow: hidden; box-shadow: 0 20px 60px #00000022; transition: border-color .2s ease, box-shadow .2s ease; }
+.panel:focus-within { border-color: #50357a; box-shadow: 0 24px 70px #00000044, 0 0 0 1px #8a55f70c; }
 .panel-head { min-height: 70px; padding: 17px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1c1f26; }
 .panel-head strong { display: block; font-size: 13px; }
 .panel-head small { display: block; margin-top: 5px; color: #656974; font-size: 11px; }
-.status-dot { color: #8554ff; font-size: 9px; }
+.status-dot { color: #8554ff; font-size: 9px; text-shadow: 0 0 12px #8554ff; }
 .valid { color: #71c89c; font-size: 9px; letter-spacing: .12em; }
 .prompt-toolbar { min-height: 52px; padding: 11px 18px 8px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid #171a20; background: #0a0c10aa; }
 .prompt-chips { display: flex; align-items: center; gap: 6px; min-width: 0; overflow-x: auto; scrollbar-width: none; }
 .prompt-chips::-webkit-scrollbar { display: none; }
 .prompt-chip, .clear-input { flex: 0 0 auto; border: 1px solid #282b34; background: #111319; color: #858995; border-radius: 999px; padding: 6px 10px; font-size: 10px; transition: .18s ease; }
 .prompt-chip:hover { border-color: #6d4aa9; color: #d1c1ed; background: #17121f; transform: translateY(-1px); }
+.prompt-chip:focus-visible, .clear-input:focus-visible, .generate:focus-visible, .ghost:focus-visible, .secondary:focus-visible, .lang:focus-visible, .primary:focus-visible, .output-foot button:focus-visible { outline: 2px solid #9b65ff; outline-offset: 3px; }
 .clear-input { border-color: transparent; background: transparent; color: #626570; padding-inline: 6px; }
 .clear-input:hover:not(:disabled) { color: #c1c4cd; }
 .clear-input:disabled { opacity: .3; cursor: default; }
@@ -66,7 +71,8 @@ kbd { border: 1px solid #292c34; border-bottom-color: #383b45; border-radius: 5p
 .how { border-top: 1px solid #17191f; padding-top: 85px; }
 h2 { font-size: clamp(38px, 5vw, 62px); letter-spacing: -.05em; line-height: 1; margin: 20px 0 55px; }
 .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
-.steps article { border: 1px solid #1d2027; border-radius: 12px; padding: 25px; background: #0b0d10; }
+.steps article { border: 1px solid #1d2027; border-radius: 12px; padding: 25px; background: #0b0d10; transition: border-color .2s ease, transform .2s ease, background .2s ease; }
+.steps article:hover { border-color: #343744; transform: translateY(-2px); background: #0d0f13; }
 .steps b { color: #7650b8; font: 11px ui-monospace, monospace; }
 .steps h3 { margin: 42px 0 10px; font-size: 17px; }
 .steps p { margin: 0; color: #6f727c; font-size: 12px; line-height: 1.7; }
@@ -88,4 +94,4 @@ footer { max-width: 1180px; margin: auto; padding: 28px; border-top: 1px solid #
   .input-meta { gap: 7px; }
   kbd { display: none; }
 }
-@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .brand-mark, .generate, .prompt-chip { transition: none; } }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .brand-mark, .generate, .prompt-chip, .primary, .steps article, .ghost, .secondary, .output-foot button, .lang { transition: none; } }
