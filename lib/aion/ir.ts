@@ -29,7 +29,7 @@ export type AionSemanticRule =
   | AionConditionalRule
   | AionAssignmentRule
   | AionPreferenceRule
-  | AionMemoryRule
+  | AionIRMemoryRule
   | AionDirectiveRule;
 
 export interface AionConditionalRule {
@@ -73,7 +73,8 @@ export interface AionPreferenceRule {
   scope: "user";
 }
 
-export interface AionMemoryRule {
+/** Typed MEMORY rule in the canonical IR; AST keeps the source-level AionMemoryRule. */
+export interface AionIRMemoryRule {
   kind: "memory";
   subject: string;
   target: string;
@@ -224,7 +225,7 @@ function normalizePreferenceTarget(target: string): string {
   return target.trim().replace(/\s+/g, ".").toLowerCase();
 }
 
-function parseMemoryRule(expression: string): AionMemoryRule {
+function parseMemoryRule(expression: string): AionIRMemoryRule {
   const match = expression.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*\[\s*([^\]]+)\s*\]\s*=\s*(KEEP|SET|FORGET)(?:\s*\[\s*([^\]]+)\s*\])?$/i);
   if (!match) {
     return {
@@ -240,7 +241,7 @@ function parseMemoryRule(expression: string): AionMemoryRule {
     kind: "memory",
     subject: match[1].toUpperCase(),
     target: normalizeExpression(match[2]),
-    operation: match[3].toLowerCase() as AionMemoryRule["operation"],
+    operation: match[3].toLowerCase() as AionIRMemoryRule["operation"],
     persistence: "persistent",
     ...(match[4] !== undefined ? { value: parseScalar(match[4].trim()) } : {}),
   };
