@@ -51,6 +51,8 @@ describe("compileAion", () => {
       assert.equal(reaction.actions[0].type, "directive");
       assert.equal(reaction.actions[1].type, "set");
       assert.equal(reaction.actions[2].type, "directive");
+      assert.equal(reaction.actions[1].operation, "add");
+      assert.equal(reaction.actions[1].value, 20);
     }
 
     assert.match(result.prompt ?? "", /AION RUNTIME CONTRACT v1/);
