@@ -172,7 +172,9 @@ function parseAction(expression: string): AionAction {
   const bracket = directive.match(/^([A-Za-z_][A-Za-z0-9_.]*)\s*\[\s*([^\]]+)\s*\]$/);
   if (bracket) {
     const rawValue = bracket[2].trim();
-    const signed = rawValue.match(/^([+-])(\d+(?:\.\d+)?)$/);
+    // The lexer separates '+'/'-' from the numeric token, so expressions such
+    // as EMPATHY[+20] can arrive here as EMPATHY [ + 20 ].
+    const signed = rawValue.match(/^([+-])\s*(\d+(?:\.\d+)?)$/);
     if (signed) {
       return {
         kind: "action",
