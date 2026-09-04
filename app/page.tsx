@@ -29,6 +29,24 @@ const example = `⟪AION::1⟫
 
 ⟫`;
 
+function AionMark() {
+  return (
+    <span className="brand-mark" aria-hidden="true">
+      <svg viewBox="0 0 40 40" role="img">
+        <defs>
+          <linearGradient id="aion-mark-gradient" x1="8" y1="5" x2="33" y2="36" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stopColor="#d8b8ff" />
+            <stop offset="0.48" stopColor="#a56cff" />
+            <stop offset="1" stopColor="#6d35e9" />
+          </linearGradient>
+        </defs>
+        <path d="M20 5.5c-7.2 0-12.7 4.5-12.7 11.1 0 5.4 3.3 8.8 8 9.9-1.6 1.8-2.7 4.2-2.7 7.3 0 1 .6 1.7 1.6 1.7 3.2 0 6.1-2.1 7.8-5.1 1.2-2 2-4.5 2-7.4v-1.5h3.3v5.1c0 2.2 1.2 3.4 3.1 3.4 2 0 3.3-1.3 3.3-3.5V17.1C33.7 10.2 28.2 5.5 20 5.5Zm6.3 12.9h-6.2c-2.8 0-4.8-1.1-4.8-3.3 0-2.6 2.2-4.3 5.1-4.3 3.8 0 5.9 2.3 5.9 6.1v1.5Z" fill="url(#aion-mark-gradient)" />
+        <circle cx="29.8" cy="8.2" r="2.1" fill="#e5d4ff" />
+      </svg>
+    </span>
+  );
+}
+
 export default function Home() {
   const [description, setDescription] = useState("");
   const [output, setOutput] = useState(example);
@@ -78,7 +96,7 @@ export default function Home() {
   return (
     <main className="shell" dir={language === "fa" ? "rtl" : "ltr"}>
       <nav className="nav">
-        <div className="brand"><span className="brand-mark">A</span><span>AION</span></div>
+        <div className="brand"><AionMark /><span>AION</span></div>
         <div className="nav-links"><a href="#studio">{t.studio}</a><a href="#how">{t.how}</a><a href="#docs">{t.docs}</a></div>
         <div className="nav-actions"><button className="lang" onClick={() => setLanguage(language === "en" ? "fa" : "en")}>{language === "en" ? "FA" : "EN"}</button><a className="ghost" href="https://github.com/TheROMZ52/AION" target="_blank" rel="noreferrer">GitHub ↗</a></div>
       </nav>
@@ -115,7 +133,7 @@ export default function Home() {
         <div className="steps"><article><b>01</b><h3>{t.describeStep}</h3><p>{t.describeText}</p></article><article><b>02</b><h3>{t.compile}</h3><p>{t.compileText}</p></article><article><b>03</b><h3>{t.use}</h3><p>{t.useText}</p></article></div>
       </section>
 
-      <footer><div className="brand"><span className="brand-mark">A</span><span>AION</span></div><span>{t.tagline}</span><span>© 2026 · {t.made}</span></footer>
+      <footer><div className="brand"><AionMark /><span>AION</span></div><span>{t.tagline}</span><span>© 2026 · {t.made}</span></footer>
     </main>
   );
 }
