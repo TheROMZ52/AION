@@ -41,9 +41,16 @@ export function resolveAion(ir: AionIR, context: AionContext = {}): AionResolved
   }
 
   // REACT never changes the baseline IR. It is recomputed from the current context.
-  const matched = ir.reactions
-    .filter((rule) => rule.semantic.kind === "conditional")
-    .filter((rule) => matchesContext(rule.semantic.condition.subject, rule.semantic.condition.selector, context));
+  // Keep discriminated-union narrowing and context matching in the same predicate.
+  const matched = ir.reactions.filter(
+    (rule) =>
+      rule.semantic.kind === "conditional" &&
+      matchesContext(
+        rule.semantic.condition.subject,
+        rule.semantic.condition.selector,
+        context,
+      ),
+  );
 
   // Broad rules apply first; specific selectors then override them.
   // Array sort is stable in modern JS, so source order is preserved for equal specificity.
