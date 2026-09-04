@@ -28,12 +28,34 @@ entity AI {
 
 export default function Home() {
   const [description, setDescription] = useState("");
+  const [output, setOutput] = useState(example);
   const [copied, setCopied] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const output = useMemo(() => {
-    if (!description.trim()) return example;
-    return `@aion 1.0\n\nentity AI {\n    identity:\n        role = "${description.trim().slice(0, 80).replaceAll('"', "'")}"\n\n    behavior:\n        preserve(user.intent)\n        adapt(context)\n        respond(naturally)\n}`;
-  }, [description]);
+  const hasInput = useMemo(() => description.trim().length > 0, [description]);
+
+  async function generate() {
+    if (!hasInput || loading) return;
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ description: description.trim() }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Generation failed.");
+      setOutput(data.aion);
+      document.getElementById("output")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Generation failed.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   async function copyOutput() {
     await navigator.clipboard.writeText(output);
@@ -56,7 +78,7 @@ export default function Home() {
       <nav className="nav">
         <div className="brand"><span className="brand-mark">A</span><span>AION</span></div>
         <div className="nav-links"><a href="#studio">Studio</a><a href="#how">How it works</a><a href="#docs">Docs</a></div>
-        <button className="ghost">GitHub ↗</button>
+        <a className="ghost" href="https://github.com/TheROMZ52/AION" target="_blank" rel="noreferrer">GitHub ↗</a>
       </nav>
 
       <section className="hero">
@@ -71,9 +93,10 @@ export default function Home() {
         <div className="workspace">
           <div className="panel input-panel">
             <div className="panel-head"><div><strong>Describe your AI</strong><small>Tell AION what you have in mind.</small></div><span className="status-dot">●</span></div>
-            <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder={'“I want an AI that feels like a close friend.\nIt should be funny, curious and casual,\nbut know when to be serious...”'} />
+            <textarea value={description} onChange={(e) => setDescription(e.target.value)} onKeyDown={(e) => { if ((e.ctrlKey || e.metaKey) && e.key === "Enter") generate(); }} placeholder={'“I want an AI that feels like a close friend.\nIt should be funny, curious and casual,\nbut know when to be serious...”'} />
             <div className="input-foot"><span>Natural language</span><button onClick={() => setDescription("A warm, funny and curious AI that talks like a close friend, adapts to my mood, and becomes serious when the topic matters.")}>Try an example ✦</button></div>
-            <button className="generate" onClick={() => document.getElementById("output")?.scrollIntoView({ behavior: "smooth", block: "center" })}>Generate AION <span>⌘ ↵</span></button>
+            <button className="generate" disabled={!hasInput || loading} onClick={generate}>{loading ? "Compiling…" : "Generate AION"} <span>⌘ ↵</span></button>
+            {error && <p className="error">{error}</p>}
           </div>
 
           <div className="arrow">→</div>
