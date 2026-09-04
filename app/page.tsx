@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { AION_VERSION } from "@/lib/aion/version";
 
 const example = `⟪AION::1⟫
 
@@ -133,7 +134,7 @@ export default function Home() {
         <div className="steps"><article><b>01</b><h3>{t.describeStep}</h3><p>{t.describeText}</p></article><article><b>02</b><h3>{t.compile}</h3><p>{t.compileText}</p></article><article><b>03</b><h3>{t.use}</h3><p>{t.useText}</p></article></div>
       </section>
 
-      <footer><div className="brand"><AionMark /><span>AION</span></div><span>{t.tagline}</span><span>© 2026 · {t.made}</span></footer>
+      <footer><div className="brand"><AionMark /><span>AION</span></div><span>{t.tagline}</span><span>v{AION_VERSION} · © 2026 · {t.made}</span></footer>
     </main>
   );
 }
