@@ -14,18 +14,18 @@ import { Token, lex } from "./lexer";
 class Parser {
   private index = 0;
   private diagnostics: AionDiagnostic[] = [];
+  private closed = false;
 
   constructor(private readonly tokens: Token[]) {}
 
   parse(): AionParseResult {
     this.skipNewlines();
     const header = this.consume("HEADER", "Expected ⟪AION::1⟫ header.");
-    if (!header || header.value !== "⟪AION::1⟫") {
-      return { diagnostics: this.diagnostics };
-    }
+    if (!header || header.value !== "⟪AION::1⟫") return { diagnostics: this.diagnostics };
 
     this.skipNewlines();
     this.expectValue("ᚫ", "Expected AI declaration.");
+    if (this.current().value === "AI") this.index++;
     this.skipNewlines();
 
     const identity = this.parseIdentity();
@@ -45,6 +45,7 @@ class Parser {
       if (this.at("EOF")) break;
       if (this.current().value === "⟫") {
         this.index++;
+        this.closed = true;
         break;
       }
 
@@ -75,10 +76,7 @@ class Parser {
     this.requireSection("REACT", sections.react.length > 0);
     this.requireSection("PRIME", sections.prime.length > 0);
 
-    if (this.tokens[this.tokens.length - 1].value !== "⟫" && !this.diagnostics.some((d) => d.message.includes("closing marker"))) {
-      this.error("Missing closing marker ⟫.");
-    }
-
+    if (!this.closed) this.error("Missing closing marker ⟫.");
     if (this.diagnostics.some((d) => d.severity === "error")) return { diagnostics: this.diagnostics };
 
     const ast: AionProgram = {
