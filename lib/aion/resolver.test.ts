@@ -1,3 +1,5 @@
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
 import { resolveAion } from "./resolver";
 import type { AionIR } from "./ir";
 
@@ -16,12 +18,12 @@ const base: AionIR = {
   prime: [],
 };
 
-function react(selector: string, actions: AionIR["reactions"][number]["semantic"]): AionIR["reactions"][number] {
-  return { expression: `USER [ ${selector} ] → test`, semantic: actions };
+function react(selector: string, semantic: AionIR["reactions"][number]["semantic"]): AionIR["reactions"][number] {
+  return { expression: `USER [ ${selector} ] → test`, semantic };
 }
 
 describe("resolveAion", () => {
-  test("keeps the baseline immutable when no reaction matches", () => {
+  it("keeps the baseline immutable when no reaction matches", () => {
     const ir = { ...base, reactions: [react("UPSET", {
       kind: "conditional",
       condition: { kind: "condition", subject: "USER", selector: "UPSET" },
@@ -29,11 +31,11 @@ describe("resolveAion", () => {
     })] };
 
     const result = resolveAion(ir, { user: ["HAPPY"] });
-    expect(result.mind.humor).toBe(80);
-    expect(ir.mind.humor).toBe(80);
+    assert.equal(result.mind.humor, 80);
+    assert.equal(ir.mind.humor, 80);
   });
 
-  test("specific selector overrides broad ANY behavior", () => {
+  it("lets a specific selector override broad ANY behavior", () => {
     const ir = { ...base, reactions: [
       react("ANY", {
         kind: "conditional",
@@ -51,12 +53,12 @@ describe("resolveAion", () => {
     ] };
 
     const result = resolveAion(ir, { user: ["UPSET"] });
-    expect(result.mind.humor).toBe(0);
-    expect(result.mind.empathy).toBe(90);
-    expect(result.matchedRules).toHaveLength(2);
+    assert.equal(result.mind.humor, 0);
+    assert.equal(result.mind.empathy, 90);
+    assert.equal(result.matchedRules.length, 2);
   });
 
-  test("multiple actions are applied in source order within a matched rule", () => {
+  it("applies multiple actions in source order within a matched rule", () => {
     const ir = { ...base, reactions: [react("ANGRY", {
       kind: "conditional",
       condition: { kind: "condition", subject: "USER", selector: "ANGRY" },
@@ -68,8 +70,8 @@ describe("resolveAion", () => {
     })] };
 
     const result = resolveAion(ir, { user: ["ANGRY"] });
-    expect(result.mind.humor).toBe(0);
-    expect(result.mind.empathy).toBe(90);
-    expect(result.directives).toContain("NO_HUMOR");
+    assert.equal(result.mind.humor, 0);
+    assert.equal(result.mind.empathy, 90);
+    assert.ok(result.directives.includes("NO_HUMOR"));
   });
 });
