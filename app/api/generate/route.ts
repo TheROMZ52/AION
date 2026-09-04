@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { analyzeAion, parseAion } from "@/lib/aion";
+import { analyzeAion, compileAion, parseAion } from "@/lib/aion";
 
-const SYSTEM_PROMPT = `You are AION Compiler 1.1 — a semantic compiler, not a generic prompt generator.
+const SYSTEM_PROMPT = `You are AION Compiler 1.2 — a semantic compiler, not a generic prompt generator.
 
 AION (AI Oriented Interaction Notation) describes AI identity, personality, voice, relationship, adaptive reactions, user preferences, memory, persona modes, and durable principles.
 
@@ -83,9 +83,8 @@ PREFERENCE SYSTEM
   "کدها رو با کامنت بنویس" → PREF { user.code_comments :: ENABLED }
   "با من فارسی حرف بزن" → PREF { user.language :: FA }
   "از ایموجی استفاده نکن" → PREF { user.emoji :: NONE }
-  "لحن دوستانه باشه" can be a stable AI voice preference when clearly about the desired interaction style; represent it in VOICE/MIND only if it describes the AI rather than the user.
 - Do not emit PREF merely because the user happened to write in Persian.
-- Do not confuse a preference with memory. "I prefer X" is PREF; "remember that I prefer X" is PREF plus MEMORY save when persistence is explicitly requested.
+- "I prefer X" is PREF; "remember that I prefer X" is PREF plus MEMORY save when persistence is explicitly requested.
 - If a preference is clearly temporary, keep it contextual rather than pretending it is permanent.
 
 MEMORY SYSTEM
@@ -93,12 +92,7 @@ MEMORY SYSTEM
 - Explicit "remember/save/keep this for later" → MEMORY save(...).
 - Explicit "forget/delete/do not retain" → MEMORY forget(...).
 - Explicit privacy/protection requirements → MEMORY protect(...).
-- Persistent user preference example:
-  PREF { user.language :: FA }
-  MEMORY { save(user.language) }
-- Project/context retention example:
-  MEMORY { save(user.project) save(conversation.context) }
-- Never store sensitive/private information merely because it appeared in the prompt. Only represent storage when the user explicitly asks for it or the AION specification clearly requires it.
+- Never store sensitive/private information merely because it appeared in the prompt.
 
 CONTEXT AND REACTION SYSTEM
 - Context-dependent behavior belongs in REACT.
@@ -156,17 +150,23 @@ function normalizeAion(output: string) {
   return result.trim();
 }
 
-function validateAion(source: string) {
+function validateAndCanonicalize(source: string) {
   const required = ["⟪AION::1⟫", "ᚫ AI", "◉ MIND", "◉ VOICE", "◉ BOND", "◉ REACT", "◉ PRIME"];
-  if (!required.every((token) => source.includes(token))) return false;
-  if (!source.startsWith("⟪AION::1⟫") || !source.endsWith("⟫")) return false;
+  if (!required.every((token) => source.includes(token))) return undefined;
+  if (!source.startsWith("⟪AION::1⟫") || !source.endsWith("⟫")) return undefined;
+
   const numbers = [...source.matchAll(/::\s*(-?\d+)/g)].map((match) => Number(match[1]));
-  if (numbers.some((value) => value < 0 || value > 100)) return false;
+  if (numbers.some((value) => value < 0 || value > 100)) return undefined;
 
   const parsed = parseAion(source);
-  if (!parsed.ast || parsed.diagnostics.some((diagnostic) => diagnostic.severity === "error")) return false;
+  if (!parsed.ast || parsed.diagnostics.some((diagnostic) => diagnostic.severity === "error")) return undefined;
+
   const semanticDiagnostics = analyzeAion(parsed.ast);
-  return !semanticDiagnostics.some((diagnostic) => diagnostic.severity === "error");
+  if (semanticDiagnostics.some((diagnostic) => diagnostic.severity === "error")) return undefined;
+
+  // The parser/analyzer are authoritative; the compiler then lowers to IR and
+  // prints one canonical representation so formatting never leaks downstream.
+  return compileAion(source).source;
 }
 
 export async function POST(request: Request) {
@@ -207,9 +207,13 @@ export async function POST(request: Request) {
     const aion = typeof raw === "string" ? normalizeAion(raw) : "";
 
     if (!aion) return NextResponse.json({ error: "The model returned an empty result." }, { status: 502 });
-    if (!validateAion(aion)) return NextResponse.json({ error: "The compiler returned invalid AION syntax. Please try again." }, { status: 502 });
 
-    return NextResponse.json({ aion, valid: true });
+    const canonical = validateAndCanonicalize(aion);
+    if (!canonical) {
+      return NextResponse.json({ error: "The compiler returned invalid AION syntax. Please try again." }, { status: 502 });
+    }
+
+    return NextResponse.json({ aion: canonical, valid: true });
   } catch {
     return NextResponse.json({ error: "Invalid request." }, { status: 400 });
   }
