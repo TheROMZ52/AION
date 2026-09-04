@@ -29,7 +29,7 @@ export function resolveAion(ir: AionIR, context: AionContext = {}): AionResolved
     matchedRules: [],
   };
 
-  // Lower-precedence persistent rules are applied before higher-precedence ones.
+  // Persistent user preferences are materialized separately from the baseline personality.
   for (const rule of ir.preferences) {
     if (rule.semantic.kind === "preference") {
       state.preferences[rule.semantic.target] = rule.semantic.value;
@@ -40,13 +40,14 @@ export function resolveAion(ir: AionIR, context: AionContext = {}): AionResolved
     if (rule.semantic.kind === "directive") state.directives.push(rule.semantic.value);
   }
 
-  // REACT never changes the baseline. It is recomputed from the current context.
+  // REACT never changes the baseline IR. It is recomputed from the current context.
   const matched = ir.reactions
     .filter((rule) => rule.semantic.kind === "conditional")
     .filter((rule) => matchesContext(rule.semantic.condition.subject, rule.semantic.condition.selector, context));
 
-  // Specific selectors win over broad selectors; source order breaks ties.
-  matched.sort((a, b) => specificity(b) - specificity(a));
+  // Broad rules apply first; specific selectors then override them.
+  // Array sort is stable in modern JS, so source order is preserved for equal specificity.
+  matched.sort((a, b) => specificity(a) - specificity(b));
 
   for (const rule of matched) {
     if (rule.semantic.kind !== "conditional") continue;
