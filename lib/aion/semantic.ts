@@ -2,7 +2,7 @@ import { AionDiagnostic, AionProgram } from "./ast";
 import {
   AionAction,
   AionConditionalRule,
-  AionMemoryRule,
+  AionIRMemoryRule,
   AionPreferenceRule,
   parseSemanticRule,
 } from "./ir";
@@ -131,7 +131,7 @@ function validatePreferenceRule(rule: AionPreferenceRule, line: number, diagnost
   }
 }
 
-function validateMemoryRule(rule: AionMemoryRule, line: number, diagnostics: AionDiagnostic[]): void {
+function validateMemoryRule(rule: AionIRMemoryRule, line: number, diagnostics: AionDiagnostic[]): void {
   if (!rule.subject.trim()) diagnostics.push(diagnostic("MEMORY subject cannot be empty.", line));
   if (!rule.target.trim()) diagnostics.push(diagnostic("MEMORY target cannot be empty.", line));
   if (!["keep", "set", "forget"].includes(rule.operation)) {
