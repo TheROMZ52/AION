@@ -5,5 +5,6 @@ export * from "./ir";
 export * from "./lexer";
 export * from "./parser";
 export * from "./printer";
+export * from "./prompt";
 export * from "./semantic";
 export * from "./types";
