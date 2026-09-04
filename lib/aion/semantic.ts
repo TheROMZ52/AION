@@ -1,4 +1,11 @@
 import { AionDiagnostic, AionProgram } from "./ast";
+import {
+  AionAction,
+  AionConditionalRule,
+  AionMemoryRule,
+  AionPreferenceRule,
+  parseSemanticRule,
+} from "./ir";
 import { MIND_TYPES, ROLES, VOICE_TYPES } from "./types";
 
 function diagnostic(message: string, line: number, column = 1, severity: "error" | "warning" = "error"): AionDiagnostic {
@@ -60,5 +67,84 @@ export function analyzeAion(ast: AionProgram): AionDiagnostic[] {
     diagnostics.push(diagnostic(`BOND.DISTANCE must be an integer from 0 to 100; received ${ast.bond.distance}.`, ast.bond.line));
   }
 
+  validateRules(ast, diagnostics);
   return diagnostics;
+}
+
+function validateRules(ast: AionProgram, diagnostics: AionDiagnostic[]): void {
+  for (const rule of ast.react) {
+    const semantic = parseSemanticRule(rule.expression, "REACT");
+    if (semantic.kind !== "conditional") {
+      diagnostics.push(diagnostic("REACT rule must be a conditional rule: SUBJECT [ SELECTOR ] → ACTION.", rule.line));
+      continue;
+    }
+    validateConditionalRule(semantic, rule.line, diagnostics);
+  }
+
+  for (const rule of ast.pref) {
+    const semantic = parseSemanticRule(rule.expression, "PREF");
+    if (semantic.kind !== "preference") {
+      diagnostics.push(diagnostic("PREF rule must be a preference rule.", rule.line));
+      continue;
+    }
+    validatePreferenceRule(semantic, rule.line, diagnostics);
+  }
+
+  for (const rule of ast.memory) {
+    const semantic = parseSemanticRule(rule.expression, "MEMORY");
+    if (semantic.kind !== "memory" || !isMemorySyntax(rule.expression)) {
+      diagnostics.push(diagnostic("MEMORY rule must use USER [ TARGET ] = KEEP|SET|FORGET.", rule.line));
+      continue;
+    }
+    validateMemoryRule(semantic, rule.line, diagnostics);
+  }
+}
+
+function validateConditionalRule(rule: AionConditionalRule, line: number, diagnostics: AionDiagnostic[]): void {
+  if (!rule.condition.subject || !rule.condition.selector) {
+    diagnostics.push(diagnostic("CONDITION requires both a subject and selector.", line));
+  }
+  if (rule.actions.length === 0) {
+    diagnostics.push(diagnostic("ACTION list cannot be empty.", line));
+  }
+  for (const action of rule.actions) validateAction(action, line, diagnostics);
+}
+
+function validateAction(action: AionAction, line: number, diagnostics: AionDiagnostic[]): void {
+  if (action.type === "directive") {
+    if (!action.value.trim()) diagnostics.push(diagnostic("ACTION directive cannot be empty.", line));
+    return;
+  }
+
+  if (!action.target.trim()) {
+    diagnostics.push(diagnostic("ACTION target cannot be empty.", line));
+  }
+  if (typeof action.value === "number" && !Number.isFinite(action.value)) {
+    diagnostics.push(diagnostic("ACTION numeric value must be finite.", line));
+  }
+}
+
+function validatePreferenceRule(rule: AionPreferenceRule, line: number, diagnostics: AionDiagnostic[]): void {
+  if (!rule.target.trim()) diagnostics.push(diagnostic("PREFERENCE target cannot be empty.", line));
+  if (typeof rule.value === "string" && !rule.value.trim()) {
+    diagnostics.push(diagnostic("PREFERENCE value cannot be empty.", line));
+  }
+}
+
+function validateMemoryRule(rule: AionMemoryRule, line: number, diagnostics: AionDiagnostic[]): void {
+  if (!rule.subject.trim()) diagnostics.push(diagnostic("MEMORY subject cannot be empty.", line));
+  if (!rule.target.trim()) diagnostics.push(diagnostic("MEMORY target cannot be empty.", line));
+  if (!["keep", "set", "forget"].includes(rule.operation)) {
+    diagnostics.push(diagnostic(`Invalid MEMORY operation '${rule.operation}'.`, line));
+  }
+  if (!["persistent", "session"].includes(rule.persistence)) {
+    diagnostics.push(diagnostic(`Invalid MEMORY persistence '${rule.persistence}'.`, line));
+  }
+  if (rule.operation === "set" && rule.value === undefined) {
+    diagnostics.push(diagnostic("MEMORY SET requires a value.", line));
+  }
+}
+
+function isMemorySyntax(expression: string): boolean {
+  return /^([A-Za-z_][A-Za-z0-9_]*)\s*\[\s*([^\]]+)\s*\]\s*=\s*(KEEP|SET|FORGET)(?:\s*\[\s*([^\]]+)\s*\])?$/i.test(expression.trim());
 }
