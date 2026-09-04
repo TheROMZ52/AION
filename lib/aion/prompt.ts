@@ -109,7 +109,8 @@ function lowerFirst(value: string): string {
 }
 
 function humanize(value: string): string {
-  return value.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+  const normalized = value.replace(/_/g, " ").toLowerCase();
+  return normalized.replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 function formatValue(value: string | number): string {
