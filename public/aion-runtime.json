@@ -1,0 +1,44 @@
+{
+  "name": "AION Runtime Contract",
+  "version": "1",
+  "language": "AION 1",
+  "purpose": "Tell an AI runtime how to semantically interpret AION source.",
+  "source_of_truth": "/aion-runtime.md",
+  "sections": {
+    "MIND": "stable AI personality baseline",
+    "VOICE": "stable communication defaults",
+    "BOND": "AI-user relationship baseline",
+    "PREF": "user-owned interaction preferences",
+    "MEMORY": "persistent or session user-state operations",
+    "PERSONA": "durable behavioral or persona directives",
+    "PRIME": "durable high-priority principles",
+    "REACT": "temporary context-dependent behavior"
+  },
+  "evaluation_order": [
+    "BASELINE",
+    "USER_STATE",
+    "DURABLE_BEHAVIOR",
+    "CONTEXTUAL_OVERLAY"
+  ],
+  "baseline_sections": ["MIND", "VOICE", "BOND"],
+  "user_state_sections": ["PREF", "MEMORY"],
+  "durable_sections": ["PERSONA", "PRIME"],
+  "contextual_sections": ["REACT"],
+  "react": {
+    "canonical_form": "SUBJECT [ SELECTOR ] → ACTION[, ACTION...]",
+    "wildcard": "ANY",
+    "specificity": "specific selectors override broader selectors",
+    "action_order": "all matching actions apply in source order",
+    "relative_numeric": ["+N", "-N"],
+    "replacement": "SET",
+    "equal_specificity": "later compatible scalar assignment wins"
+  },
+  "requirements": [
+    "Interpret AION semantically, not as prose to echo.",
+    "Do not invent behavior absent from the program.",
+    "Keep conditional behavior conditional.",
+    "Preserve user ownership and memory intent.",
+    "Do not permanently mutate baseline behavior from a temporary REACT rule.",
+    "Respond naturally unless AION source is explicitly requested."
+  ]
+}
