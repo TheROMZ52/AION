@@ -44,7 +44,7 @@ jobs:
               `- **Logs:** ${logUrl || 'Not provided'}`,
               '',
               'This issue tracks the current Vercel deployment failure.'
-            ].join('\\n');
+            ].join('\n');
 
             if (existing) {
               await github.rest.issues.update({
