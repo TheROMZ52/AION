@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { analyzeAion, compileAion, parseAion } from "@/lib/aion";
+import { compileAion, parseAion } from "@/lib/aion";
 
 const SYSTEM_PROMPT = `You are AION Compiler 1.2 — a semantic compiler, not a generic prompt generator.
 
@@ -150,7 +150,7 @@ function normalizeAion(output: string) {
   return result.trim();
 }
 
-function validateAndCanonicalize(source: string) {
+function compileGeneratedAion(source: string) {
   const required = ["⟪AION::1⟫", "ᚫ AI", "◉ MIND", "◉ VOICE", "◉ BOND", "◉ REACT", "◉ PRIME"];
   if (!required.every((token) => source.includes(token))) return undefined;
   if (!source.startsWith("⟪AION::1⟫") || !source.endsWith("⟫")) return undefined;
@@ -159,14 +159,12 @@ function validateAndCanonicalize(source: string) {
   if (numbers.some((value) => value < 0 || value > 100)) return undefined;
 
   const parsed = parseAion(source);
-  if (!parsed.ast || parsed.diagnostics.some((diagnostic) => diagnostic.severity === "error")) return undefined;
+  if (!parsed.ast) return undefined;
 
-  const semanticDiagnostics = analyzeAion(parsed.ast);
-  if (semanticDiagnostics.some((diagnostic) => diagnostic.severity === "error")) return undefined;
+  const compiled = compileAion(source);
+  if (compiled.diagnostics.some((diagnostic) => diagnostic.severity === "error") || !compiled.ir || !compiled.prompt) return undefined;
 
-  // The parser/analyzer are authoritative; the compiler then lowers to IR and
-  // prints one canonical representation so formatting never leaks downstream.
-  return compileAion(source).source;
+  return compiled;
 }
 
 export async function POST(request: Request) {
@@ -208,12 +206,12 @@ export async function POST(request: Request) {
 
     if (!aion) return NextResponse.json({ error: "The model returned an empty result." }, { status: 502 });
 
-    const canonical = validateAndCanonicalize(aion);
-    if (!canonical) {
+    const compiled = compileGeneratedAion(aion);
+    if (!compiled) {
       return NextResponse.json({ error: "The compiler returned invalid AION syntax. Please try again." }, { status: 502 });
     }
 
-    return NextResponse.json({ aion: canonical, valid: true });
+    return NextResponse.json({ aion: compiled.source, prompt: compiled.prompt, valid: true });
   } catch {
     return NextResponse.json({ error: "Invalid request." }, { status: 400 });
   }
