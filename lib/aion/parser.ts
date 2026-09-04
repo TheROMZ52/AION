@@ -49,6 +49,14 @@ class Parser {
         break;
       }
 
+      // ◉ is a presentation marker, not a syntactic section token.
+      // The lexer intentionally keeps it as an identifier-like token, so
+      // consume it here before reading the actual SECTION token.
+      if (this.current().value === "◉") {
+        this.index++;
+        this.skipNewlines();
+      }
+
       if (this.at("SECTION")) {
         const name = this.current().value;
         this.index++;
@@ -99,7 +107,7 @@ class Parser {
     let role = "";
     const line = this.current().line;
 
-    while (!this.at("EOF") && !this.at("SECTION")) {
+    while (!this.at("EOF") && !this.at("SECTION") && this.current().value !== "◉") {
       if (this.current().value === "↳") {
         this.index++;
         const key = this.readValue();
