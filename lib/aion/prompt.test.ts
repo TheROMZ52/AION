@@ -39,7 +39,7 @@ describe("compileAionPrompt", () => {
     }];
 
     const prompt = compileAionPrompt(ir);
-    assert.match(prompt, /When the USER state is UPSET/);
+    assert.match(prompt, /When the User state is UPSET/);
     assert.match(prompt, /no humor, then increase Empathy by 20, then short/);
     assert.doesNotMatch(prompt, /EMPAT\[\+20\]/);
   });
@@ -53,7 +53,7 @@ describe("compileAionPrompt", () => {
 
     const prompt = compileAionPrompt(ir);
     const personality = prompt.split("PERSONALITY\n")[1]?.split("\n\n")[0] ?? "";
-    assert.match(prompt, /Honor this user preference: NAMING = MAHBOD/);
+    assert.match(prompt, /Honor this user preference: Naming = MAHBOD/);
     assert.match(personality, /Humor: 80/);
     assert.doesNotMatch(personality, /MAHBOD/);
   });
@@ -72,7 +72,7 @@ describe("compileAionPrompt", () => {
     }];
 
     const prompt = compileAionPrompt(ir);
-    assert.match(prompt, /Follow this memory instruction: USER NAME keep \(persistent\)/);
+    assert.match(prompt, /Follow this memory instruction: USER Name keep \(persistent\)/);
     assert.ok(prompt.includes("MEMORY POLICY"));
     assert.ok(!prompt.includes("PERSONALITY\n- Name"));
   });
