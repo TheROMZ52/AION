@@ -86,12 +86,16 @@ function translateSemanticRule(rule: AionSemanticRule, kind: string): string {
 }
 
 function describeSemanticAction(action: Extract<AionSemanticRule, { kind: "conditional" }>["actions"][number]): string {
-  if (action.type === "directive") return humanize(action.value);
+  if (action.type === "directive") return formatDirective(action.value);
 
   const target = humanize(action.target);
   if (action.operation === "add") return `increase ${target} by ${action.value}`;
   if (action.operation === "subtract") return `decrease ${target} by ${action.value}`;
   return `set ${target} to ${formatValue(action.value)}`;
+}
+
+function formatDirective(value: string): string {
+  return value.replace(/_/g, " ").toLowerCase();
 }
 
 function joinActions(actions: string[]): string {
