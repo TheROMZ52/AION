@@ -70,11 +70,10 @@ class Parser {
       }
     }
 
-    this.requireSection("MIND", sections.mind.length > 0);
-    this.requireSection("VOICE", sections.voice.length > 0);
-    this.requireSection("BOND", sections.bond.relationship !== undefined || sections.bond.distance !== undefined);
-    this.requireSection("REACT", sections.react.length > 0);
-    this.requireSection("PRIME", sections.prime.length > 0);
+    // Sections are intentionally optional. The printer omits empty sections,
+    // and the semantic meaning of a program determines which sections exist.
+    // Requiring REACT/PRIME here previously rejected valid programs that had
+    // no conditional behavior or durable principles.
 
     if (!this.closed) this.error("Missing closing marker ⟫.");
     if (this.diagnostics.some((d) => d.severity === "error")) return { diagnostics: this.diagnostics };
@@ -220,10 +219,6 @@ class Parser {
     }
     this.index++;
     return token.value;
-  }
-
-  private requireSection(name: string, present: boolean) {
-    if (!present) this.error(`Missing required section ${name}.`);
   }
 
   private expect(type: Token["type"], message: string) {
