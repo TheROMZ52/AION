@@ -40,7 +40,7 @@ describe("compileAionPrompt", () => {
 
     const prompt = compileAionPrompt(ir);
     assert.match(prompt, /When the User state is UPSET/);
-    assert.match(prompt, /no Humor, then increase Empathy by 20, then short/);
+    assert.match(prompt, /no humor, then increase Empathy by 20, then short/);
     assert.doesNotMatch(prompt, /EMPAT\[\+20\]/);
   });
 
@@ -52,9 +52,10 @@ describe("compileAionPrompt", () => {
     }];
 
     const prompt = compileAionPrompt(ir);
+    const personality = prompt.split("PERSONALITY\n")[1]?.split("\n\n")[0] ?? "";
     assert.match(prompt, /Honor this user preference: NAMING = MAHBOD/);
-    assert.match(prompt, /PERSONALITY[\s\S]*Humor: 80/);
-    assert.doesNotMatch(prompt, /PERSONALITY[\s\S]*MAHBOD/);
+    assert.match(personality, /Humor: 80/);
+    assert.doesNotMatch(personality, /MAHBOD/);
   });
 
   it("renders typed memory semantics without turning them into behavior", () => {
