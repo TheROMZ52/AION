@@ -2,29 +2,32 @@
 
 import { useMemo, useState } from "react";
 
-const example = `@aion 1.0
+const example = `⟪AION::1⟫
 
-entity AI {
-    identity:
-        type = "companion"
-        role = "friend"
+ᚫ AI
+  ↳ ID: FRIEND_AI
+  ↳ ROLE: FRIEND
 
-    personality:
-        warmth = 0.92
-        humor = 0.78
-        empathy = 0.90
-        energy = 0.86
+  ◉ MIND {
+      warmth   :: 92
+      humor    :: 78
+      empathy  :: 90
+      energy   :: 86
+      formal   :: 18
+  }
 
-    speech:
-        style = casual
-        emoji = contextual
-        verbosity = adaptive
+  ◉ VOICE {
+      lang     :: FA
+      mode     :: CASUAL
+      emoji    :: SMART
+      response :: NATURAL
+  }
 
-    rules:
-        never.sound("robotic")
-        always.read(context)
-        prefer(natural_conversation)
-}`;
+  ◉ REACT {
+      USER[SAD] → HUMOR[-40] → EMPATHY[+30]
+  }
+
+⟫`;
 
 export default function Home() {
   const [description, setDescription] = useState("");
@@ -32,77 +35,74 @@ export default function Home() {
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [language, setLanguage] = useState<"en" | "fa">("en");
 
   const hasInput = useMemo(() => description.trim().length > 0, [description]);
+  const isPersian = /[\u0600-\u06FF]/.test(description);
+  const t = language === "fa" ? {
+    studio: "استودیو", how: "چطور کار می‌کند", docs: "مستندات", hero: "به هوشت", hero2: "شخصیت بده.",
+    intro: "با زبان خودت توضیح بده می‌خواهی هوشت چطور فکر کند، حرف بزند و رفتار کند. AION حرف‌هایت را به یک تعریف ساختاریافته از شخصیت تبدیل می‌کند.",
+    build: "ساخت شخصیت", see: "AION چطور کار می‌کند", describe: "AI خودت را توصیف کن", hint: "با زبان طبیعی توضیح بده چه شخصیتی می‌خواهی.",
+    natural: "زبان طبیعی", example: "یک نمونه امتحان کن ✦", generate: "ساخت AION", compiling: "در حال کامپایل…", valid: "✓ معتبر",
+    your: "AION شما", structured: "تعریف ساختاریافته شخصیت.", idea: "ایده اصلی", in: "نیت انسان در.", out: "شخصیت AI بیرون.",
+    describeStep: "توصیف", describeText: "با زبان ساده بنویس چه می‌خواهی. نیازی به یادگیری سینتکس نیست.",
+    compile: "کامپایل", compileText: "AION نیت تو را به رفتار دقیق و ساختاریافته تبدیل می‌کند.", use: "همه‌جا استفاده کن", useText: "تعریف شخصیت را به مدل، اپ یا ایجنت خودت ببر.",
+    tagline: "زبانی برای دادن شخصیت به هوش مصنوعی.", made: "ساخته‌شده توسط TheROMZ52"
+  } : {
+    studio: "Studio", how: "How it works", docs: "Docs", hero: "Give your AI", hero2: "a personality.",
+    intro: "Describe how you want your AI to think, speak and behave. AION turns your words into a structured personality definition.",
+    build: "Build a personality", see: "See how AION works", describe: "Describe your AI", hint: "Tell AION what you have in mind.",
+    natural: "Natural language", example: "Try an example ✦", generate: "Generate AION", compiling: "Compiling…", valid: "✓ VALID",
+    your: "Your AION", structured: "Structured personality definition.", idea: "THE IDEA", in: "Human intent in.", out: "AI personality out.",
+    describeStep: "Describe", describeText: "Write what you want in plain language. No syntax to learn.",
+    compile: "Compile", compileText: "AION maps your intent into precise, structured behavior.", use: "Use anywhere", useText: "Take the personality definition to your model, app or agent.",
+    tagline: "A language for giving AI a personality.", made: "Made by TheROMZ52"
+  };
 
   async function generate() {
     if (!hasInput || loading) return;
-    setLoading(true);
-    setError("");
-
+    setLoading(true); setError("");
     try {
-      const response = await fetch("/api/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ description: description.trim() }),
-      });
+      const response = await fetch("/api/generate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ description: description.trim() }) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Generation failed.");
       setOutput(data.aion);
       document.getElementById("output")?.scrollIntoView({ behavior: "smooth", block: "center" });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Generation failed.");
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { setError(err instanceof Error ? err.message : "Generation failed."); }
+    finally { setLoading(false); }
   }
 
-  async function copyOutput() {
-    await navigator.clipboard.writeText(output);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  }
-
-  function downloadOutput() {
-    const blob = new Blob([output], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "personality.aion";
-    a.click();
-    URL.revokeObjectURL(url);
-  }
+  async function copyOutput() { await navigator.clipboard.writeText(output); setCopied(true); setTimeout(() => setCopied(false), 1500); }
+  function downloadOutput() { const blob = new Blob([output], { type: "text/plain" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = "personality.aion"; a.click(); URL.revokeObjectURL(url); }
 
   return (
-    <main className="shell">
+    <main className="shell" dir={language === "fa" ? "rtl" : "ltr"}>
       <nav className="nav">
         <div className="brand"><span className="brand-mark">A</span><span>AION</span></div>
-        <div className="nav-links"><a href="#studio">Studio</a><a href="#how">How it works</a><a href="#docs">Docs</a></div>
-        <a className="ghost" href="https://github.com/TheROMZ52/AION" target="_blank" rel="noreferrer">GitHub ↗</a>
+        <div className="nav-links"><a href="#studio">{t.studio}</a><a href="#how">{t.how}</a><a href="#docs">{t.docs}</a></div>
+        <div className="nav-actions"><button className="lang" onClick={() => setLanguage(language === "en" ? "fa" : "en")}>{language === "en" ? "FA" : "EN"}</button><a className="ghost" href="https://github.com/TheROMZ52/AION" target="_blank" rel="noreferrer">GitHub ↗</a></div>
       </nav>
 
       <section className="hero">
         <div className="eyebrow"><span /> AI PERSONALITY LANGUAGE</div>
-        <h1>Give your AI<br /><em>a personality.</em></h1>
-        <p>Describe how you want your AI to think, speak and behave. AION turns your words into a structured personality definition.</p>
-        <div className="hero-actions"><a className="primary" href="#studio">Build a personality <span>→</span></a><a className="secondary" href="#how">See how AION works</a></div>
+        <h1>{t.hero}<br /><em>{t.hero2}</em></h1>
+        <p>{t.intro}</p>
+        <div className="hero-actions"><a className="primary" href="#studio">{t.build} <span>→</span></a><a className="secondary" href="#how">{t.see}</a></div>
       </section>
 
       <section className="studio" id="studio">
         <div className="section-label"><span>01</span> AION STUDIO</div>
         <div className="workspace">
           <div className="panel input-panel">
-            <div className="panel-head"><div><strong>Describe your AI</strong><small>Tell AION what you have in mind.</small></div><span className="status-dot">●</span></div>
-            <textarea value={description} onChange={(e) => setDescription(e.target.value)} onKeyDown={(e) => { if ((e.ctrlKey || e.metaKey) && e.key === "Enter") generate(); }} placeholder={'“I want an AI that feels like a close friend.\nIt should be funny, curious and casual,\nbut know when to be serious...”'} />
-            <div className="input-foot"><span>Natural language</span><button onClick={() => setDescription("A warm, funny and curious AI that talks like a close friend, adapts to my mood, and becomes serious when the topic matters.")}>Try an example ✦</button></div>
-            <button className="generate" disabled={!hasInput || loading} onClick={generate}>{loading ? "Compiling…" : "Generate AION"} <span>⌘ ↵</span></button>
+            <div className="panel-head"><div><strong>{t.describe}</strong><small>{t.hint}</small></div><span className="status-dot">●</span></div>
+            <textarea dir={isPersian || language === "fa" ? "rtl" : "ltr"} lang={isPersian || language === "fa" ? "fa" : "en"} value={description} onChange={(e) => setDescription(e.target.value)} onKeyDown={(e) => { if ((e.ctrlKey || e.metaKey) && e.key === "Enter") generate(); }} placeholder={language === "fa" ? "«مثلاً می‌خوام یک هوش مصنوعی داشته باشم که مثل یک دوست صمیمی حرف بزنه؛ شوخ‌طبع و کنجکاو باشه، ولی وقتی موضوع جدی شد، بدونه چطور رفتار کنه…»" : '“I want an AI that feels like a close friend.\nIt should be funny, curious and casual,\nbut know when to be serious...”'} />
+            <div className="input-foot"><span>{t.natural}</span><button onClick={() => setDescription(language === "fa" ? "یک هوش مصنوعی گرم، شوخ‌طبع و کنجکاو می‌خواهم که مثل یک دوست صمیمی صحبت کند، با حال و هوای من سازگار شود و وقتی موضوع مهم است جدی رفتار کند." : "A warm, funny and curious AI that talks like a close friend, adapts to my mood, and becomes serious when the topic matters.")}>{t.example}</button></div>
+            <button className="generate" disabled={!hasInput || loading} onClick={generate}>{loading ? t.compiling : t.generate} <span>⌘ ↵</span></button>
             {error && <p className="error">{error}</p>}
           </div>
-
           <div className="arrow">→</div>
-
           <div className="panel output-panel" id="output">
-            <div className="panel-head"><div><strong>Your AION</strong><small>Structured personality definition.</small></div><span className="valid">✓ VALID</span></div>
+            <div className="panel-head"><div><strong>{t.your}</strong><small>{t.structured}</small></div><span className="valid">{t.valid}</span></div>
             <pre><code>{output}</code></pre>
             <div className="output-foot"><button onClick={copyOutput}>{copied ? "Copied ✓" : "Copy"}</button><button onClick={downloadOutput}>Download .aion</button></div>
           </div>
@@ -110,16 +110,12 @@ export default function Home() {
       </section>
 
       <section className="how" id="how">
-        <div className="section-label"><span>02</span> THE IDEA</div>
-        <h2>Human intent in.<br /><em>AI personality out.</em></h2>
-        <div className="steps">
-          <article><b>01</b><h3>Describe</h3><p>Write what you want in plain language. No syntax to learn.</p></article>
-          <article><b>02</b><h3>Compile</h3><p>AION maps your intent into precise, structured behavior.</p></article>
-          <article><b>03</b><h3>Use anywhere</h3><p>Take the personality definition to your model, app or agent.</p></article>
-        </div>
+        <div className="section-label"><span>02</span> {t.idea}</div>
+        <h2>{t.in}<br /><em>{t.out}</em></h2>
+        <div className="steps"><article><b>01</b><h3>{t.describeStep}</h3><p>{t.describeText}</p></article><article><b>02</b><h3>{t.compile}</h3><p>{t.compileText}</p></article><article><b>03</b><h3>{t.use}</h3><p>{t.useText}</p></article></div>
       </section>
 
-      <footer><div className="brand"><span className="brand-mark">A</span><span>AION</span></div><span>A language for giving AI a personality.</span><span>© 2026</span></footer>
+      <footer><div className="brand"><span className="brand-mark">A</span><span>AION</span></div><span>{t.tagline}</span><span>© 2026 · {t.made}</span></footer>
     </main>
   );
 }
