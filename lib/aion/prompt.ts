@@ -1,4 +1,4 @@
-import { AionIR, AionIRRule } from "./ir";
+import { AionIR, AionIRRule, AionSemanticRule } from "./ir";
 import { AION_RUNTIME_KNOWLEDGE } from "./knowledge";
 
 /**
@@ -58,52 +58,50 @@ function formatBond(ir: AionIR): string {
 }
 
 function formatRules(rules: AionIRRule[], kind: string): string {
-  return rules.map((rule) => `- ${translateRule(rule.expression, kind)}`).join("\n");
+  return rules.map((rule) => `- ${translateSemanticRule(rule.semantic, kind)}`).join("\n");
 }
 
-/** Translate canonical AION rule syntax into explicit model instructions. */
-function translateRule(expression: string, kind: string): string {
-  const normalized = expression.trim().replace(/\s+/g, " ");
-
-  const arrowParts = normalized.split(/\s*→\s*/).filter(Boolean);
-  if (arrowParts.length > 1) {
-    const trigger = describeTrigger(arrowParts[0]);
-    const actions = arrowParts.slice(1).map(describeAction).join(" Then ");
-    return `When ${trigger}, ${actions.charAt(0).toLowerCase()}${actions.slice(1)}.`;
+/** Translate the typed semantic IR into explicit runtime instructions. */
+function translateSemanticRule(rule: AionSemanticRule, kind: string): string {
+  if (rule.kind === "conditional") {
+    const trigger = `the ${humanize(rule.condition.subject)} state is ${formatValue(rule.condition.selector)}`;
+    const actions = rule.actions.map(describeSemanticAction);
+    return `When ${trigger}, ${joinActions(actions)}.`;
   }
 
-  if (kind === "preference") return `Honor this user preference: ${describeAtomicRule(normalized)}.`;
-  if (kind === "memory policy") return `Follow this memory instruction: ${describeAtomicRule(normalized)}.`;
-  if (kind === "persona mode") return `Use this persona behavior: ${describeAtomicRule(normalized)}.`;
-  if (kind === "principle") return `Follow this principle: ${describeAtomicRule(normalized)}.`;
-  return `Follow this ${kind} rule: ${describeAtomicRule(normalized)}.`;
+  if (rule.kind === "preference") {
+    return `Honor this user preference: ${humanize(rule.target)} = ${formatValue(rule.value)}.`;
+  }
+
+  if (rule.kind === "memory") {
+    const value = rule.value === undefined ? "" : ` = ${formatValue(rule.value)}`;
+    return `Follow this memory instruction: ${rule.subject} ${humanize(rule.target)} ${rule.operation}${value} (${rule.persistence}).`;
+  }
+
+  if (rule.kind === "assignment") {
+    return `Follow this ${kind} assignment: ${humanize(rule.target)} = ${rule.value}.`;
+  }
+
+  return `Follow this ${kind} rule: ${rule.value}.`;
 }
 
-function describeTrigger(value: string): string {
-  const match = value.match(/^([A-Z_]+)\[([^\]]+)\]$/);
-  if (!match) return value;
-  const source = match[1].toLowerCase().replace(/_/g, " ");
-  const state = match[2].toLowerCase().replace(/_/g, " ");
-  return `the ${source} state is ${state}`;
+function describeSemanticAction(action: Extract<AionSemanticRule, { kind: "conditional" }>["actions"][number]): string {
+  if (action.type === "directive") return humanize(action.value);
+
+  const target = humanize(action.target);
+  if (action.operation === "add") return `increase ${target} by ${action.value}`;
+  if (action.operation === "subtract") return `decrease ${target} by ${action.value}`;
+  return `set ${target} to ${formatValue(action.value)}`;
 }
 
-function describeAction(value: string): string {
-  const match = value.match(/^([A-Z_]+)\[([^\]]+)\]$/);
-  if (!match) return value;
-  const action = match[1].toLowerCase().replace(/_/g, " ");
-  const valueText = match[2].replace(/^([+-]\d+)$/, "$1 points").replace(/_/g, " ");
-  if (action === "match") return `match ${valueText}`;
-  if (/^[+-]\d+ points$/.test(valueText)) return `adjust ${action} by ${valueText}`;
-  return `set ${action} to ${valueText}`;
+function joinActions(actions: string[]): string {
+  if (actions.length === 0) return "do nothing";
+  if (actions.length === 1) return lowerFirst(actions[0]);
+  return actions.map(lowerFirst).join(", then ");
 }
 
-function describeAtomicRule(value: string): string {
-  return value
-    .replace(/::/g, " = ")
-    .replace(/→/g, " then ")
-    .replace(/\[([^\]]+)\]/g, " ($1)")
-    .replace(/_/g, " ")
-    .trim();
+function lowerFirst(value: string): string {
+  return value.length === 0 ? value : value.charAt(0).toLowerCase() + value.slice(1);
 }
 
 function humanize(value: string): string {
