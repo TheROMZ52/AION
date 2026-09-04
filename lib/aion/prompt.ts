@@ -1,4 +1,5 @@
 import { AionIR, AionIRRule } from "./ir";
+import { AION_RUNTIME_KNOWLEDGE } from "./knowledge";
 
 /**
  * Deterministic AION -> system-prompt compiler.
@@ -10,6 +11,7 @@ import { AionIR, AionIRRule } from "./ir";
 export function compileAionPrompt(ir: AionIR): string {
   const sections: string[] = [];
 
+  sections.push(`AION RUNTIME LANGUAGE KNOWLEDGE\n${AION_RUNTIME_KNOWLEDGE}`);
   sections.push(`You are ${ir.identity.id}, an AI whose role is ${ir.identity.role}.`);
 
   const personality = formatAssignments(ir.mind);
