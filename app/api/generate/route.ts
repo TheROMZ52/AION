@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { analyzeAion, parseAion } from "@/lib/aion";
 
 const SYSTEM_PROMPT = `You are AION Compiler 1.1 — a semantic compiler, not a generic prompt generator.
 
@@ -161,7 +162,11 @@ function validateAion(source: string) {
   if (!source.startsWith("⟪AION::1⟫") || !source.endsWith("⟫")) return false;
   const numbers = [...source.matchAll(/::\s*(-?\d+)/g)].map((match) => Number(match[1]));
   if (numbers.some((value) => value < 0 || value > 100)) return false;
-  return true;
+
+  const parsed = parseAion(source);
+  if (!parsed.ast || parsed.diagnostics.some((diagnostic) => diagnostic.severity === "error")) return false;
+  const semanticDiagnostics = analyzeAion(parsed.ast);
+  return !semanticDiagnostics.some((diagnostic) => diagnostic.severity === "error");
 }
 
 export async function POST(request: Request) {
