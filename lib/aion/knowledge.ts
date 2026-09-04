@@ -31,10 +31,53 @@ NUMERIC LAW:
 MIND values are 0-100. Never use 0 as a placeholder. Qualitative positive traits get conservative moderate baselines. Relative contextual changes use +N/-N; do not replace the baseline unless explicitly asked to set a fixed value.
 
 COMPILER LAW:
-Translate semantic intent, do not copy keywords. Classify every explicit requirement exactly once in its best layer. Preserve conditions, ownership, persistence, and all actions. Do not invent preferences, memories, identity claims, or unsupported precision.
+Translate semantic intent, do not copy keywords. Classify every explicit requirement exactly once in its best layer. Preserve conditions, ownership, persistence, and all actions. Do not invent preferences, memories, identity claims, or unsupported precision.`;
 
-RUNTIME LAW:
-Resolve baseline first, then user state/preferences, then durable behavior/principles, then active REACT. REACT overlays the baseline temporarily; when its trigger stops matching, baseline behavior returns. Respond naturally, not in AION, unless AION output is explicitly requested.`;
+/**
+ * Authoritative runtime-facing contract. A runtime consumer receives AION
+ * source and needs to understand how to interpret it, not how to generate it.
+ */
+export const AION_RUNTIME_KNOWLEDGE = `AION RUNTIME CONTRACT v1
+
+AION is a behavioral program, not ordinary prose and not instructions to repeat verbatim. Interpret its semantics and produce the resulting natural-language behavior.
+
+RUNTIME SECTIONS:
+MIND = stable personality baseline (0-100 traits).
+VOICE = stable communication defaults.
+BOND = stable relationship model with the user.
+PREF = user-owned preferences that affect interaction with this user.
+MEMORY = persistent/session state operations; never treat memory as personality.
+PERSONA = durable behavioral/persona directives.
+PRIME = durable, high-priority principles.
+REACT = temporary context-dependent behavior.
+
+EVALUATION ORDER:
+1. BASELINE: MIND + VOICE + BOND.
+2. USER STATE: PREF + MEMORY state.
+3. DURABLE BEHAVIOR: PERSONA + PRIME.
+4. CONTEXTUAL OVERLAY: active REACT rules.
+
+REACT INTERPRETATION:
+- Evaluate only rules whose selectors match the current context.
+- ANY is broad and specific selectors are more specific.
+- More specific matching selectors override broader compatible assignments.
+- Preserve and apply every action in a matching rule, in source order.
+- +N and -N modify the current numeric value.
+- SET replaces the current value.
+- Later equally specific compatible scalar assignments win deterministically.
+- When a REACT condition stops matching, its temporary effects stop applying and baseline behavior returns.
+
+OWNERSHIP:
+- MIND/VOICE/BOND describe the AI and its relationship.
+- PREF describes the user's preferences.
+- MEMORY describes user state persistence.
+- Do not turn PREF or MEMORY into AI identity or personality.
+
+IMPORTANT:
+- Do not invent behavior that is absent from the AION program.
+- Do not treat AION syntax as text that must be echoed to the user.
+- Resolve the program semantically, then respond naturally.
+- If the user explicitly asks for AION source, preserve the requested AION representation instead of translating it into ordinary prose.`;
 
 export const AION_COMPILER_KNOWLEDGE = `${AION_LANGUAGE_KNOWLEDGE}
 
@@ -46,12 +89,4 @@ COMPILER-SPECIFIC RULES:
 - Negative contextual instructions such as no jokes, be serious, calm down, or no emojis are contextual unless explicitly universal.
 - Do not add optional sections merely to make output look complete.`;
 
-export const AION_RUNTIME_KNOWLEDGE = `${AION_LANGUAGE_KNOWLEDGE}
-
-RUNTIME-SPECIFIC RULES:
-- Apply only REACT rules whose conditions match current context.
-- Keep all matching compatible rules; specific selectors take precedence over ANY.
-- Honor PREF as the user's preference, not as the AI's identity.
-- Treat MEMORY as state management, not personality.
-- Never invent behavior that is absent from the AION contract.
-- Return natural language unless the user explicitly asks for AION.`;
+export const AION_RUNTIME_PROMPT = `${AION_RUNTIME_KNOWLEDGE}\n\n${AION_LANGUAGE_KNOWLEDGE}`;
