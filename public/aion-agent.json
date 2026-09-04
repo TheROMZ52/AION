@@ -1,0 +1,33 @@
+{
+  "name": "AION Agent API",
+  "api_version": "1",
+  "compiler_version": "1.5",
+  "description": "Machine-readable contract for the AION natural-language compiler API.",
+  "endpoint": "/api/agent",
+  "methods": {
+    "GET": {
+      "metadata": "/api/agent",
+      "compile": "/api/agent?prompt=<url-encoded-text>"
+    },
+    "POST": {
+      "content_type": "application/json",
+      "body": {
+        "description": "string"
+      }
+    },
+    "OPTIONS": "CORS preflight"
+  },
+  "limits": {
+    "max_input_characters": 4000
+  },
+  "response": {
+    "success": {
+      "ok": true,
+      "api_version": "1",
+      "compiler_version": "1.5",
+      "aion": "string",
+      "prompt": "string",
+      "valid": true
+    }
+  }
+}
