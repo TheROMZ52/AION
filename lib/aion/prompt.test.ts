@@ -40,7 +40,7 @@ describe("compileAionPrompt", () => {
 
     const prompt = compileAionPrompt(ir);
     assert.match(prompt, /When the User state is UPSET/);
-    assert.match(prompt, /no humor, then adjust empathy by 20, then short/);
+    assert.match(prompt, /no Humor, then increase Empathy by 20, then short/);
     assert.doesNotMatch(prompt, /EMPAT\[\+20\]/);
   });
 
