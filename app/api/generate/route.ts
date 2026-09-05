@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { compileAion } from "@/lib/aion";
 import { AION_COMPILER_KNOWLEDGE } from "@/lib/aion/knowledge";
 
+const AION_SPEC_URL = "https://aion-six-kohl.vercel.app/docs";
+
 const SYSTEM_PROMPT = `You are AION Compiler 1.5 — a semantic compiler, not a generic prompt generator.
 
 ${AION_COMPILER_KNOWLEDGE}
@@ -12,6 +14,7 @@ STRICT OUTPUT CONTRACT
 - Last line exactly: ⟫
 - Every section is optional. Emit only sections with semantic content.
 - Use only the canonical AION syntax below.
+- AION SPEC metadata identifies the language specification. Preserve it as part of the source when present.
 
 CANONICAL SHAPE
 ⟪AION::1⟫
@@ -19,6 +22,7 @@ CANONICAL SHAPE
 ᚫ AI
   ↳ ID: <UPPER_SNAKE_CASE_ID>
   ↳ ROLE: <FRIEND|ASSISTANT|COMPANION|TEACHER|ENGINEER|MENTOR>
+  ↳ SPEC: <AION_SPEC_URL>
 
   ◉ MIND {
       warmth    :: <0-100>
@@ -91,6 +95,7 @@ If an OR condition names separate states, emit separate rules when that makes ma
 IDENTITY
 AI.ID identifies the AI, not the user. Never use the user's name as AI.ID unless the user explicitly names the AI that way.
 ROLE is the AI's explicit functional role. A relationship such as "مثل یک دوست" belongs to BOND, not ROLE, unless the user explicitly says the AI's role should be FRIEND.
+SPEC identifies the language specification that defines how the AION source should be interpreted. Use the canonical AION specification URL supplied by the compiler. It is metadata, not a personality rule.
 
 NUMBERS
 Use conservative integer values from 0 to 100. Never use 0 as a placeholder. If a positive stable trait has no exact number, choose a moderate positive baseline. If a trait exists only inside a negative conditional, do not create a baseline for it. Do not invent a numeric MIND value merely because a qualitative VOICE mode already expresses the intent (for example, "خودمانی" → CASUAL, not formal :: 0).
@@ -104,6 +109,7 @@ FINAL CHECK
 - Preferences remain user-owned.
 - Memory remains persistence intent.
 - Relationship language is not confused with AI ROLE.
+- SPEC metadata is present and points to the canonical AION specification.
 - Qualitative voice instructions are not converted into unnecessary numeric MIND values.
 - No contradictory baseline inferred from a contextual exception.
 - No invented preferences, memories, identity claims, or unnecessary sections.
@@ -119,6 +125,17 @@ function normalizeAion(output: string) {
   const end = result.lastIndexOf("⟫");
   if (end >= 0) result = result.slice(0, end + 1);
   return result.trim();
+}
+
+function addSpecMetadata(source: string): string {
+  const lines = source.split("\n");
+  const roleIndex = lines.findIndex((line) => line.trimStart().startsWith("↳ ROLE:"));
+  if (roleIndex === -1) return source;
+
+  const withoutSpec = lines.filter((line) => !line.trimStart().startsWith("↳ SPEC:"));
+  const updatedRoleIndex = withoutSpec.findIndex((line) => line.trimStart().startsWith("↳ ROLE:"));
+  withoutSpec.splice(updatedRoleIndex + 1, 0, `  ↳ SPEC: ${AION_SPEC_URL}`);
+  return withoutSpec.join("\n");
 }
 
 function compileGeneratedAion(source: string) {
@@ -181,7 +198,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: result.error, generated: aion.slice(0, 4000) }, { status: 502 });
     }
 
-    return NextResponse.json({ aion: result.compiled.source, prompt: result.compiled.prompt, valid: true });
+    return NextResponse.json({ aion: addSpecMetadata(result.compiled.source), prompt: result.compiled.prompt, valid: true });
   } catch (error) {
     console.error("AION generate error:", error);
     return NextResponse.json({ error: "Invalid request." }, { status: 400 });
