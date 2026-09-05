@@ -1,14 +1,15 @@
 name: Vercel Deployment Check
 
 on:
-  deployment_status:
+  deployment_status: {}
 
 permissions:
   contents: read
   issues: write
+  deployments: read
 
 concurrency:
-  group: vercel-deployment-${{ github.event.deployment.id }}
+  group: vercel-deployment-${{ github.event.deployment.id || github.run_id }}
   cancel-in-progress: false
 
 jobs:
