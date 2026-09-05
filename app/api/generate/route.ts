@@ -150,7 +150,7 @@ function normalizeAion(output: string) {
  * impossible when the user supplied a non-empty constraint field.
  */
 function preserveAdvancedConstraints(source: string, input: string): string {
-  const match = input.match(/(?:^|\n)Constraints:\s*(.+?)(?=\n[A-Za-z][^\n]*:|\n?$)/s);
+  const match = input.match(/(?:^|\n)Constraints:\s*(.+?)(?=\n[A-Za-z][^\n]*:|\n?$)/);
   const constraints = match?.[1]?.trim();
   if (!constraints) return source;
 
