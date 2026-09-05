@@ -1,8 +1,8 @@
 /**
- * Compact executable AION knowledge shared by both AI boundaries.
+ * Executable AION knowledge shared by both AI boundaries.
  *
- * The Markdown files in docs/ are the human-readable documentation.
- * These strings are the runtime-safe contract injected into LLM prompts.
+ * The Markdown files in docs/ are human-readable documentation.
+ * These strings are the runtime-safe contracts injected into LLM prompts.
  */
 
 export const AION_LANGUAGE_KNOWLEDGE = `AION (AI Oriented Interaction Notation) is a behavioral DSL for AI identity, stable personality, voice, relationship, user preferences, memory, durable behavior, principles, and contextual reactions.
@@ -59,6 +59,75 @@ COMPILER LAW:
 Translate semantic intent, do not copy keywords. Classify every explicit requirement exactly once in its best layer. Preserve conditions, ownership, persistence, modality, and all actions. Do not invent preferences, memories, identity claims, or unsupported precision.`;
 
 /**
+ * Normative LLM compiler guide. This is intentionally compact enough for runtime
+ * prompt injection while preserving the rules that prevent semantic loss.
+ */
+export const AION_COMPILER_GUIDE = `AION SEMANTIC COMPILER GUIDE v0.1
+
+MISSION:
+You are the semantic translation stage of a compiler, not a generic prompt rewriter. Read natural-language intent, decompose it into atomic requirements, classify them, then emit valid AION. Never delete explicit user intent, silently weaken it, or invent a different meaning.
+
+MENTAL PIPELINE:
+Natural language -> semantic decomposition -> requirement inventory -> ownership/scope/modality/persistence/condition -> AION section -> canonical source -> validation.
+
+REQUIREMENT INVENTORY:
+For every requirement determine OWNER, SCOPE, MODALITY, PERSISTENCE, CONDITION, and OPERATION. One sentence may contain many independent requirements; split them before classification.
+
+SECTION OWNERSHIP:
+MIND = stable AI personality. VOICE = stable communication defaults. BOND = AI-user relationship. PREF = persistent user-owned interaction preferences and constraints. MEMORY = state persistence. PERSONA = durable AI-wide behavior. PRIME = highest-priority durable principle. REACT = temporary contextual behavior.
+
+IDENTITY VS RELATIONSHIP:
+ROLE is the AI's functional identity. BOND is the relationship. "با من مثل یه رفیق خیلی صمیمی رفتار کن" establishes a close bond and does not automatically mean ROLE: FRIEND. Only explicit role wording should change ROLE.
+
+BASELINE VS EXCEPTION:
+A contextual exception MUST remain conditional. Example: "ذاتاً شوخم ولی وقتی ناراحتم شوخی نکن" => positive stable humor baseline + REACT USER[UPSET] -> NO_HUMOR. Never compile it as humor :: 0.
+
+MODALITY:
+always/همیشه/حتماً/باید = required; should/بهتره/ترجیحاً = softer preference; never/نباید/هیچ‌وقت = forbidden; when/if/وقتی/اگر/هر وقت = conditional. Preserve strength.
+
+NEGATION:
+"don't X" means forbid X. It does not mean X equals 0 and must not create an opposite baseline trait.
+
+ADVANCED CONTEXT:
+Once supplied, every non-empty field is explicit intent: Goal, AI role, Relationship, Language, Tone, Response length, Emoji, Warmth, Humor, Empathy, Curiosity, Energy, Constraints. Optional UI fields become mandatory compiler input when non-empty.
+
+CONSTRAINTS:
+A non-empty Constraints field MUST survive compilation. Persistent user-owned constraints normally go to PREF. Conditional constraints go to REACT. Durable AI-wide behavior goes to PERSONA. Highest-priority durable principles go to PRIME. Choose by semantic ownership and lifetime, not by the field label.
+
+CRITICAL CONSTRAINT EXAMPLE:
+Input: "کد رو تغییر نده و همیشه داخل کدها با کامنت کد رو مرتب کن"
+Meaning contains at least two requirements: (1) prohibit unwanted code modification; (2) require comments and organized code in generated code. Preserve BOTH. Splitting into separate PREF rules is preferred when clearer. If exact decomposition is uncertain, preserving the full constraint text as a PREF value is safer than dropping information.
+
+MULTIPLE ACTIONS:
+"وقتی ناراحتم شوخی نکن، همدل‌تر باش و کوتاه جواب بده" => preserve NO_HUMOR + EMPATHY[+20] + SHORT. Never drop later actions.
+
+CONDITIONS:
+when/whenever/if/while/وقتی/هر وقت/اگر/زمانی که normally imply REACT. Preserve the trigger/action relationship.
+
+NUMBERS:
+MIND traits are 0-100. Never use 0 as a placeholder. Use conservative moderate values for qualitative positive traits. Use +N/-N for contextual relative adjustments. Do not invent numeric precision. "خودمانی" maps to VOICE mode CASUAL; it does not justify inventing formal :: 0.
+
+MEMORY:
+"اسمم و ترجیحاتم رو یادت بمونه" must preserve both USER[NAME] = KEEP and USER[PREFERENCES] = KEEP. Memory is persistence intent, not personality.
+
+FORBIDDEN TRANSFORMATIONS:
+- delete explicit requirements;
+- summarize constraints until enforceable meaning disappears;
+- turn don't X into X = 0;
+- turn conditional behavior into baseline behavior;
+- confuse PREF with MIND or ROLE;
+- confuse BOND with ROLE;
+- discard actions in an action chain;
+- invent memories or preferences;
+- invent unsupported numeric precision;
+- add sections merely for visual completeness;
+- weaken or strengthen modality silently;
+- emit malformed or non-canonical AION.
+
+FINAL CHECK:
+Every explicit requirement is represented; every condition remains conditional; every user-owned rule remains user-owned; memory remains state persistence; relationship is not confused with role; no baseline is inferred from exceptions; all actions survive; numbers are conservative; output is canonical AION only.`;
+
+/**
  * Authoritative runtime-facing contract. A runtime consumer receives AION
  * source and needs to understand how to interpret it, not how to generate it.
  */
@@ -104,18 +173,6 @@ IMPORTANT:
 - Resolve the program semantically, then respond naturally.
 - If the user explicitly asks for AION source, preserve the requested AION representation instead of translating it into ordinary prose.`;
 
-export const AION_COMPILER_KNOWLEDGE = `${AION_LANGUAGE_KNOWLEDGE}
-
-COMPILER-SPECIFIC RULES:
-- Output only valid AION source according to the canonical grammar supplied by the compiler prompt.
-- AI ID identifies the AI, not the user. User naming belongs in PREF.
-- "if/when/وقتی/اگر/هر وقت" normally signals conditional REACT behavior.
-- "more/increase" on a contextual numeric trait means relative adjustment such as EMPATHY[+20].
-- Negative contextual instructions such as no jokes, be serious, calm down, or no emojis are contextual unless explicitly universal.
-- Never drop a non-empty ADVANCED CONTEXT field. Treat each supplied field as explicit user intent that must be represented somewhere in the program.
-- In ADVANCED CONTEXT, constraints are user-authored rules. Do not summarize them away. Preserve their modality (always/never/should), subject (especially code/output behavior), and any condition.
-- For coding constraints such as "do not modify code" or "always comment and keep code organized", use PREF because they are persistent user-owned interaction requirements unless the user explicitly makes them conditional or AI-wide.
-- If one constraint contains multiple independent directives, preserve every directive. Splitting them into multiple PREF entries is preferred when that makes each directive unambiguous.
-- Do not add optional sections merely to make output look complete.`;
+export const AION_COMPILER_KNOWLEDGE = `${AION_LANGUAGE_KNOWLEDGE}\n\n${AION_COMPILER_GUIDE}\n\nCOMPILER-SPECIFIC RULES:\n- Output only valid AION source according to the canonical grammar supplied by the compiler prompt.\n- AI ID identifies the AI, not the user. User naming belongs in PREF.\n- Never drop a non-empty ADVANCED CONTEXT field.\n- Preserve every explicit constraint, including multiple directives in one field.\n- Do not add optional sections merely to make output look complete.`;
 
 export const AION_RUNTIME_PROMPT = `${AION_RUNTIME_KNOWLEDGE}\n\n${AION_LANGUAGE_KNOWLEDGE}`;
