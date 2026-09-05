@@ -22,15 +22,19 @@ The interface should feel closer to a thoughtful compiler/editor than a generic 
 - Display typography stays restrained; hierarchy comes from scale, weight, and spacing rather than decorative type.
 
 ## Studio interaction principles
-- The prompt is the main instrument: paste-friendly, multiline, resizable, persisted across refreshes, and usable with Ctrl/⌘ + Enter.
+- The prompt is the main instrument: paste-friendly, multiline, persisted across refreshes, and usable with Ctrl/⌘ + Enter.
 - Quick prompts are suggestions, not a replacement for free-form intent.
+- Advanced mode is an optional structured layer over the natural-language prompt. It collects goal, AI role, relationship, language, tone, response length, emoji behavior, personality intensity, and constraints.
+- Advanced fields are sent to the existing compiler as explicit `[ADVANCED CONTEXT]`; the UI does not generate AION syntax directly.
+- Advanced mode must remain optional: a plain prompt follows the same compiler path as before.
+- Personality sliders are guidance values, not mandatory defaults. Only values changed from the neutral Studio baseline are sent to the compiler, avoiding accidental precision.
 - Output is presented as a compiler artifact, not a chat response.
 - Focus states must be visible and keyboard navigation must remain usable.
 - Motion is subtle and disabled/reduced when the user requests reduced motion.
 - RTL is treated as a whole-surface concern, not only a textarea concern.
 
 ## Signature
-The memorable element is the **intent → AION** workspace: two quiet compiler panels joined by a single directional bridge. Avoid adding unrelated decoration or AI-dashboard clichés.
+The memorable element is the **intent → AION** workspace: two quiet compiler panels joined by a single directional bridge. Advanced mode lives inside the intent panel as a progressive disclosure, so precision increases without turning the Studio into a settings dashboard.
 
 ## Guardrails
 - Preserve the minimal AION identity and violet signal.
