@@ -10,6 +10,8 @@ AION describes an AI's stable identity, baseline personality, communication styl
 
 The compiler MUST preserve explicit user intent. It MUST NOT invent stronger personality traits merely because a rule mentions a contextual exception.
 
+**Compiler implementation guide:** [`AION-COMPILER-GUIDE-v0.1.md`](./AION-COMPILER-GUIDE-v0.1.md)
+
 ## 2. Sections
 
 | Section | Ownership | Lifetime | Meaning |
