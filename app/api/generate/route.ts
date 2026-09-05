@@ -4,7 +4,7 @@ import { AION_COMPILER_KNOWLEDGE } from "@/lib/aion/knowledge";
 
 const AION_SPEC_URL = "https://aion-six-kohl.vercel.app/docs";
 
-const SYSTEM_PROMPT = `You are AION Compiler 1.5 — a semantic compiler, not a generic prompt generator.
+const SYSTEM_PROMPT = `You are AION Compiler 1.6 — a semantic compiler, not a generic prompt generator.
 
 ${AION_COMPILER_KNOWLEDGE}
 
@@ -83,7 +83,24 @@ SEMANTIC MAPPING
 - اسم/ترجیحاتم را به خاطر بسپار → MEMORY for both NAME and PREFERENCES
 
 PREFERENCE SEMANTICS
-User-specific requests such as name, language preference, response length, formatting, emoji preference, or interaction style belong to PREF when they describe how the AI should interact with this user. Do not turn them into AI identity or intrinsic MIND traits.
+User-specific requests such as name, language preference, response length, formatting, emoji preference, coding conventions, editing boundaries, or interaction style belong to PREF when they describe how the AI should interact with this user. Do not turn them into AI identity or intrinsic MIND traits.
+
+CONSTRAINT COMPILATION
+- A non-empty "Constraints" field in [ADVANCED CONTEXT] is never optional metadata. It is explicit user intent and MUST be represented in the generated program.
+- First understand the constraint semantically. Then choose its owner, scope, modality, persistence, and condition.
+- Persistent user-owned constraints normally map to PREF.
+- Conditional constraints map to REACT and keep their trigger.
+- AI-wide durable behavior maps to PERSONA.
+- Highest-priority durable principles map to PRIME.
+- Never erase, summarize away, or replace a constraint merely because it is long or colloquial.
+- Preserve strong modality: always/حتماً/باید/همیشه are requirements; never/نباید/هیچ‌وقت are prohibitions; should/بهتره are softer preferences.
+- Preserve scope: a coding constraint must remain about coding/output behavior, not become an unrelated personality trait.
+- Preserve multiplicity: when one sentence contains multiple independent directives, encode every directive. Splitting them into multiple PREF rules is preferred when that increases semantic clarity.
+- For example, "کد رو تغییر نده و همیشه داخل کد ها با کامنت کد رو مرتب کن" contains at least two persistent user constraints: prohibit unwanted code modification and require comments/organization in generated code. Do not keep only one.
+- A safe fallback is to preserve the full user constraint text as one PREF value when a more granular decomposition would risk changing meaning; never drop it.
+
+SEMANTIC DECOMPOSITION
+Before writing the final AION, mentally create an atomic requirement inventory from the full user input. For each atom answer: what is being requested, who owns it, what it applies to, whether it is persistent or conditional, and whether it changes, adds, forbids, or prefers behavior. Only then map atoms to AION sections.
 
 CONDITIONAL SEMANTICS
 A sentence can contain a baseline and an exception. Preserve both independently. For example, "ذاتاً شوخم ولی وقتی ناراحتم شوخی نکن و همدل‌تر باش" requires a positive stable humor baseline plus REACT USER[UPSET] with NO_HUMOR and EMPATHY[+20]. Never encode the exception as humor :: 0.
@@ -103,7 +120,7 @@ Use conservative integer values from 0 to 100. Never use 0 as a placeholder. If 
 FINAL CHECK
 - Exact header/footer.
 - Valid AION grammar.
-- All explicit requirements represented.
+- Every explicit requirement represented, including non-empty ADVANCED CONTEXT fields.
 - Conditional requirements remain conditional.
 - All actions preserved.
 - Preferences remain user-owned.
@@ -125,6 +142,33 @@ function normalizeAion(output: string) {
   const end = result.lastIndexOf("⟫");
   if (end >= 0) result = result.slice(0, end + 1);
   return result.trim();
+}
+
+/**
+ * Deterministic semantic-loss guard for structured Advanced constraints.
+ * The model should compile these itself; this guard makes silent omission
+ * impossible when the user supplied a non-empty constraint field.
+ */
+function preserveAdvancedConstraints(source: string, input: string): string {
+  const match = input.match(/(?:^|\n)Constraints:\s*(.+?)(?=\n[A-Za-z][^\n]*:|\n?$)/s);
+  const constraints = match?.[1]?.trim();
+  if (!constraints) return source;
+
+  // Avoid duplicating a constraint that the model already represented.
+  if (/\n\s*◉\s+PREF\s*\{[\s\S]*USER_CONSTRAINTS\s*::/m.test(source)) return source;
+
+  const serialized = JSON.stringify(constraints);
+  const prefRule = `      USER_CONSTRAINTS :: ${serialized}`;
+  const prefMatch = source.match(/(\n\s*◉\s+PREF\s*\{\n)([\s\S]*?)(\n\s*\})/m);
+
+  if (prefMatch && prefMatch.index !== undefined) {
+    const insertAt = prefMatch.index + prefMatch[1].length + prefMatch[2].length;
+    return source.slice(0, insertAt) + `\n${prefRule}` + source.slice(insertAt);
+  }
+
+  const closing = source.lastIndexOf("⟫");
+  if (closing < 0) return source;
+  return `${source.slice(0, closing)}\n\n  ◉ PREF {\n${prefRule}\n  }\n\n${source.slice(closing)}`;
 }
 
 function addSpecMetadata(source: string): string {
@@ -190,9 +234,11 @@ export async function POST(request: Request) {
 
     const data = await response.json();
     const raw = data?.choices?.[0]?.message?.content;
-    const aion = typeof raw === "string" ? normalizeAion(raw) : "";
-    if (!aion) return NextResponse.json({ error: "The model returned an empty result." }, { status: 502 });
+    const generated = typeof raw === "string" ? normalizeAion(raw) : "";
+    if (!generated) return NextResponse.json({ error: "The model returned an empty result." }, { status: 502 });
 
+    // Apply the semantic-loss guard before compiler validation.
+    const aion = preserveAdvancedConstraints(generated, description);
     const result = compileGeneratedAion(aion);
     if ("error" in result) {
       return NextResponse.json({ error: result.error, generated: aion.slice(0, 4000) }, { status: 502 });
