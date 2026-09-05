@@ -50,8 +50,6 @@ class Parser {
       }
 
       // ◉ is a presentation marker, not a syntactic section token.
-      // The lexer intentionally keeps it as an identifier-like token, so
-      // consume it here before reading the actual SECTION token.
       if (this.current().value === "◉") {
         this.index++;
         this.skipNewlines();
@@ -77,11 +75,6 @@ class Parser {
         this.recoverLine();
       }
     }
-
-    // Sections are intentionally optional. The printer omits empty sections,
-    // and the semantic meaning of a program determines which sections exist.
-    // Requiring REACT/PRIME here previously rejected valid programs that had
-    // no conditional behavior or durable principles.
 
     if (!this.closed) this.error("Missing closing marker ⟫.");
     if (this.diagnostics.some((d) => d.severity === "error")) return { diagnostics: this.diagnostics };
@@ -111,8 +104,13 @@ class Parser {
       if (this.current().value === "↳") {
         this.index++;
         const key = this.readValue();
+
+        // Identity metadata uses ':' and the SPEC value is a URL. URLs contain
+        // ':' and '/', so consuming only one IDENT token would leave the URL's
+        // punctuation in the identity parser and produce a false syntax error.
         this.expect("COLON", "Expected ':' after identity field.");
-        const value = this.readValue();
+        const value = key === "SPEC" ? this.readIdentityLineValue() : this.readValue();
+
         if (key === "ID") id = value;
         if (key === "ROLE") role = value;
       } else if (this.current().type === "NEWLINE") {
@@ -126,6 +124,15 @@ class Parser {
     if (!id) this.error("Missing AI ID.");
     if (!role) this.error("Missing AI ROLE.");
     return { id, role, line };
+  }
+
+  private readIdentityLineValue() {
+    const parts: string[] = [];
+    while (!this.at("EOF") && !this.at("NEWLINE")) {
+      parts.push(this.current().value);
+      this.index++;
+    }
+    return parts.join("").trim();
   }
 
   private parseAssignments(): AionAssignment[] {
