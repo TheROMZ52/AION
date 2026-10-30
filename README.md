@@ -3,6 +3,7 @@
 # AION
 
 A compact way to explain how an AI should behave — because “just be normal” turned out to be surprisingly complicated.
+
 AI Oriented Interaction Notation — a compact language for describing AI personality, communication, relationships, preferences, memory, context-sensitive behavior, and durable principles.
 
 ## Status
