@@ -1,3 +1,5 @@
+[English](README.md) · [فارسی](README.fa.md)
+
 # AION
 
 AI Oriented Interaction Notation — a compact language for describing AI personality, communication, relationships, preferences, memory, context-sensitive behavior, and durable principles.
