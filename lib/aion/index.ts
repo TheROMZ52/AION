@@ -1,11 +1,4 @@
-export * from "./ast";
-export * from "./compiler";
-export * from "./diagnostics";
-export * from "./ir";
-export * from "./lexer";
-export * from "./parser";
-export * from "./printer";
-export * from "./prompt";
-export * from "./resolver";
-export * from "./semantic";
-export * from "./types";
+export * from "./schema";
+export { renderPrompt } from "./render";
+export { generatePersona } from "./generate";
+export type { GenerateResult } from "./generate";

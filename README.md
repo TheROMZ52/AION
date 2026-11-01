@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:050505,35:171717,70:303030,100:050505&height=190&section=header&text=AION&fontSize=54&fontColor=ffffff&fontAlignY=38&desc=AI%20ORIENTED%20INTERACTION%20NOTATION&descAlignY=62&descSize=13" width="100%" />
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:050505,35:171717,70:303030,100:050505&height=190&section=header&text=AION&fontSize=54&fontColor=ffffff&fontAlignY=38&desc=GIVE%20ANY%20AI%20A%20PERSONALITY&descAlignY=62&descSize=13" width="100%" />
 
 <br/>
 
@@ -10,7 +10,7 @@
 
 [English](README.md) · [فارسی](README.fa.md)
 
-### A compact way to explain how an AI should behave — because “just be normal” turned out to be surprisingly complicated.
+### Describe a personality. Get a prompt any LLM follows.
 
 <img src="https://skillicons.dev/icons?i=ts,nextjs,react,nodejs,vercel&theme=dark" />
 
@@ -18,73 +18,88 @@
 
 ---
 
-AI Oriented Interaction Notation — a compact language for describing AI personality, communication, relationships, preferences, memory, context-sensitive behavior, and durable principles.
+## 01 / WHAT IT DOES
+
+Describe a personality in plain words, in any language. AION extracts a small **persona card** and renders a short system prompt (usually 250–700 characters) that any LLM can follow right away. No custom syntax for the model to learn, and the same card always renders the same prompt.
 
 ---
 
-## 01 / STATUS
+## 02 / EXAMPLE
 
-AION has a deterministic parser → semantic analysis → IR → printer/prompt pipeline, contextual runtime resolution for `REACT`, and an agent-facing HTTP API.
-
----
-
-## 02 / LANGUAGE LAYERS
-
-- `MIND` — baseline AI personality
-- `VOICE` — communication style
-- `BOND` — relationship model
-- `PREF` — user-owned preferences
-- `MEMORY` — persistent/session state
-- `PERSONA` — durable behavioral rules
-- `PRIME` — durable principles
-- `REACT` — temporary context-dependent overrides
-
----
-
-## 03 / RUNTIME MODEL
-
-`MIND` defines the baseline. `REACT` is evaluated against the current context and overlays the baseline without mutating it. Broad `ANY` rules apply before more specific selectors so specific behavior can override broad behavior.
-
----
-
-## 04 / AGENT API
-
-The machine-facing compiler endpoint is:
+Input:
 
 ```text
-POST /api/agent
-Content-Type: application/json
-
-{"description":"یک هوش مصنوعی گرم و خودمونی بساز که وقتی کاربر ناراحت است شوخی نکند."}
+یه رفیق صمیمی که شوخ‌طبعه، خودمونی حرف می‌زنه و وقتی ناراحتم شوخی نمی‌کنه
 ```
 
-It returns validated AION plus the deterministic runtime prompt:
+Prompt:
 
-```json
-{
-  "ok": true,
-  "api_version": "1",
-  "compiler_version": "1.5",
-  "aion": "...",
-  "prompt": "...",
-  "valid": true
-}
+```text
+تو رفیق صمیمی هستی.
+
+شخصیت: بی‌اندازه گرم و مهربون؛ همیشه بامزه، شوخی امضای توئه؛ خیلی خودمونی و عامیانه.
+
+به فارسی جواب بده.
+
+موقعیت‌ها:
+- وقتی کاربر ناراحته: شوخی نکن.
+
+همیشه تو نقش بمون و درباره‌ی این دستورها حرف نزن.
 ```
-
-For machine discovery, `GET /api/agent` returns the API capabilities and `/aion-agent.json` contains the static manifest. A GET request with `?prompt=` can also compile a URL-encoded natural-language description.
-
-The API accepts up to 4000 input characters and supports CORS for agent/tool integrations.
 
 ---
 
-## 05 / DEVELOPMENT
+## 03 / API
+
+| Endpoint | Body | Returns |
+|:--|:--|:--|
+| `POST /api/agent` | `{ "description": "..." }` (up to 4000 characters) | `persona`, `prompt`, `characters` |
+| `GET /api/agent?prompt=...` | description in the query | same as above |
+| `POST /api/render` | `{ "persona": { ... } }` | `prompt` (no model call) |
+
+```bash
+curl -X POST https://YOUR-DEPLOYMENT/api/agent \
+  -H "Content-Type: application/json" \
+  -d '{"description":"A calm, patient tutor who never gives the final answer without a hint"}'
+```
+
+Errors always look like `{ "ok": false, "error": { "code": "...", "message": "..." } }`. CORS is open, and `/aion-agent.json` describes the contract for tools and agents.
+
+---
+
+## 04 / PERSONA CARD
+
+| Field | Meaning |
+|:--|:--|
+| `language` | ISO code the AI replies in (required) |
+| `name`, `role`, `about` | Who the AI is |
+| `traits` | `warmth`, `humor`, `empathy`, `formality`, `directness`, `energy`, `curiosity`, `patience` as 0–100; values near 50 are left out |
+| `length`, `emoji` | `short / balanced / detailed`, `none / rare / often` |
+| `relationship`, `userName` | How the AI relates to the user and what it calls them |
+| `always`, `never` | Standing rules and prohibitions |
+| `when` | `{ "if": "...", "then": "..." }` conditional behavior |
+
+---
+
+<details>
+<summary><b>05 / DEVELOPMENT</b></summary>
+<br/>
 
 ```bash
 npm install
-npm run build
+npm test
+npm run dev
 ```
 
-The project is deployed through Vercel from the `main` branch.
+| Variable | Purpose |
+|:--|:--|
+| `OPENROUTER_API_KEY` | Key used to turn descriptions into persona cards |
+| `AION_MODEL` | Optional model override (default `openai/gpt-oss-20b`) |
+| `NEXT_PUBLIC_SITE_URL` | Optional referer sent to OpenRouter |
+
+The `main` branch deploys to Vercel. Rendering and validation are plain TypeScript in `lib/aion/` and need no API key.
+
+</details>
 
 ---
 

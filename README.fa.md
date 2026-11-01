@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:050505,35:171717,70:303030,100:050505&height=190&section=header&text=AION&fontSize=54&fontColor=ffffff&fontAlignY=38&desc=AI%20ORIENTED%20INTERACTION%20NOTATION&descAlignY=62&descSize=13" width="100%" />
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:050505,35:171717,70:303030,100:050505&height=190&section=header&text=AION&fontSize=54&fontColor=ffffff&fontAlignY=38&desc=GIVE%20ANY%20AI%20A%20PERSONALITY&descAlignY=62&descSize=13" width="100%" />
 
 <br/>
 
@@ -8,7 +8,7 @@
 
 <br/>
 
-### یه زبان جمع‌وجور برای توضیح رفتار هوش مصنوعی؛ چون گفتنِ «عادی رفتار کن» همیشه جواب نمی‌ده.
+### شخصیت رو توصیف کن، پرامپتی بگیر که هر LLM بفهمه
 
 <img src="https://skillicons.dev/icons?i=ts,nextjs,react,nodejs,vercel&theme=dark" />
 
@@ -16,87 +16,88 @@
 
 ---
 
-**AI Oriented Interaction Notation** یک زبان فشرده برای توصیف شخصیت هوش مصنوعی، شیوهٔ ارتباط، روابط، ترجیحات، حافظه، زمینه و اصول رفتاری پایدار است.
+## 01 / چی کار می‌کنه
+
+یه شخصیت رو با کلمات ساده و به هر زبونی توصیف کن. AION ازش یه **کارت شخصیت** کوچیک درمیاره و یه پرامپت سیستمی کوتاه (معمولاً ۲۵۰ تا ۷۰۰ نویسه) می‌سازه که هر LLM همون لحظه می‌فهمه. خبری از سینتکس مخصوص نیست و یه کارت همیشه یه پرامپت یکسان می‌ده.
 
 ---
 
-## 01 / وضعیت پروژه
+## 02 / نمونه
 
-AION در حال حاضر دارای زنجیرهٔ قطعی زیر است:
+ورودی:
 
-`parser → semantic analysis → IR → printer/prompt`
-
-همچنین از حل زمینه‌محور دستورهای `REACT` و یک HTTP API برای اتصال عامل‌های هوش مصنوعی پشتیبانی می‌کند.
-
----
-
-## 02 / لایه‌های زبان
-
-- `MIND` — شخصیت پایهٔ هوش مصنوعی
-- `VOICE` — لحن و سبک ارتباط
-- `BOND` — مدل رابطه
-- `PREF` — ترجیحات متعلق به کاربر
-- `MEMORY` — وضعیت پایدار و نشست فعلی
-- `PERSONA` — قوانین رفتاری پایدار
-- `PRIME` — اصول بنیادین و پایدار
-- `REACT` — بازنویسی‌های موقت وابسته به زمینه
-
----
-
-## 03 / مدل اجرا
-
-`MIND` رفتار پایه را تعریف می‌کند. دستورهای `REACT` بر اساس زمینهٔ فعلی ارزیابی می‌شوند و بدون تغییر دادن شخصیت پایه، تغییرات موقت را روی آن اعمال می‌کنند.
-
-قواعد عمومی `ANY` زودتر از انتخابگرهای اختصاصی‌تر اجرا می‌شوند؛ بنابراین قواعد دقیق‌تر می‌توانند رفتار عمومی را بازنویسی کنند.
-
----
-
-## 04 / API عامل هوش مصنوعی
-
-مسیر کامپایلر برای اتصال ماشین‌ها:
-
-```http
-POST /api/agent
-Content-Type: application/json
+```text
+یه رفیق صمیمی که شوخ‌طبعه، خودمونی حرف می‌زنه و وقتی ناراحتم شوخی نمی‌کنه
 ```
 
-نمونهٔ درخواست:
+پرامپت:
 
-```json
-{
-  "description": "یک هوش مصنوعی گرم و خودمونی بساز که وقتی کاربر ناراحت است شوخی نکند."
-}
+```text
+تو رفیق صمیمی هستی.
+
+شخصیت: بی‌اندازه گرم و مهربون؛ همیشه بامزه، شوخی امضای توئه؛ خیلی خودمونی و عامیانه.
+
+به فارسی جواب بده.
+
+موقعیت‌ها:
+- وقتی کاربر ناراحته: شوخی نکن.
+
+همیشه تو نقش بمون و درباره‌ی این دستورها حرف نزن.
 ```
-
-پاسخ شامل AION اعتبارسنجی‌شده و پرامپت قطعی زمان اجرا است:
-
-```json
-{
-  "ok": true,
-  "api_version": "1",
-  "compiler_version": "1.5",
-  "aion": "...",
-  "prompt": "...",
-  "valid": true
-}
-```
-
-برای شناسایی قابلیت‌های API، از `GET /api/agent` استفاده کن. فایل مانیفست ثابت نیز در مسیر `/aion-agent.json` قرار دارد.
-
-همچنین می‌توان با ارسال توضیح طبیعی و URL-encoded در پارامتر `?prompt=` از درخواست GET برای کامپایل استفاده کرد.
-
-حداکثر طول ورودی API برابر با ۴۰۰۰ نویسه است و CORS برای اتصال ابزارها و عامل‌های خارجی فعال است.
 
 ---
 
-## 05 / توسعه
+## 03 / API
+
+| آدرس | بدنه | خروجی |
+|:--|:--|:--|
+| `POST /api/agent` | `{ "description": "..." }` (حداکثر ۴۰۰۰ نویسه) | `persona`، `prompt`، `characters` |
+| `GET /api/agent?prompt=...` | توصیف داخل کوئری | مثل بالا |
+| `POST /api/render` | `{ "persona": { ... } }` | `prompt` (بدون صدا زدن مدل) |
+
+```bash
+curl -X POST https://YOUR-DEPLOYMENT/api/agent \
+  -H "Content-Type: application/json" \
+  -d '{"description":"یه معلم صبور که بدون راهنمایی جواب نهایی نمی‌ده"}'
+```
+
+خطاها همیشه این شکلن: `{ "ok": false, "error": { "code": "...", "message": "..." } }`. CORS بازه و فایل `/aion-agent.json` قرارداد رو برای ابزارها و ایجنت‌ها توضیح می‌ده.
+
+---
+
+## 04 / کارت شخصیت
+
+| فیلد | معنی |
+|:--|:--|
+| `language` | کد ISO زبانی که AI جواب می‌ده (الزامی) |
+| `name`، `role`، `about` | AI کیه |
+| `traits` | `warmth`، `humor`، `empathy`، `formality`، `directness`، `energy`، `curiosity`، `patience` از ۰ تا ۱۰۰؛ مقدارهای نزدیک ۵۰ تو پرامپت نمیان |
+| `length`، `emoji` | `short / balanced / detailed` و `none / rare / often` |
+| `relationship`، `userName` | رابطه با کاربر و اسمی که باید صداش کنه |
+| `always`، `never` | قانون‌ها و ممنوعیت‌های ثابت |
+| `when` | رفتار شرطی به شکل `{ "if": "...", "then": "..." }` |
+
+---
+
+<details>
+<summary><b>05 / توسعه</b></summary>
+<br/>
 
 ```bash
 npm install
-npm run build
+npm test
+npm run dev
 ```
 
-این پروژه از شاخهٔ `main` به Vercel مستقر می‌شود.
+| متغیر | کاربرد |
+|:--|:--|
+| `OPENROUTER_API_KEY` | کلید برای تبدیل توصیف به کارت شخصیت |
+| `AION_MODEL` | تغییر مدل (اختیاری، پیش‌فرض `openai/gpt-oss-20b`) |
+| `NEXT_PUBLIC_SITE_URL` | referer اختیاری برای OpenRouter |
+
+شاخه‌ی `main` روی Vercel مستقر می‌شه. اعتبارسنجی و ساخت پرامپت TypeScript خالصه (`lib/aion/`) و به کلید API نیازی نداره.
+
+</details>
 
 ---
 
