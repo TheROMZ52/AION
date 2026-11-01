@@ -1,23 +1,18 @@
-import type { Metadata } from "next";
-import { Vazirmatn } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import "@fontsource-variable/vazirmatn";
 import "./globals.css";
 
-const vazirmatn = Vazirmatn({
-  subsets: ["arabic", "latin"],
-  variable: "--font-vazirmatn",
-  display: "swap",
-  weight: ["400", "500", "600", "700", "800"],
-});
-
 export const metadata: Metadata = {
-  title: "AION — Give AI a personality",
-  description: "Turn natural language personality ideas into structured AION behavior.",
+  title: "AION — شخصیت بده به هوش مصنوعی",
+  description: "شخصیت دلخواهت رو توصیف کن و یه پرامپت کوتاه تحویل بگیر که هر LLM رو همون‌طور رفتار می‌ده.",
 };
+
+export const viewport: Viewport = { themeColor: "#07080b" };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
-      <body className={vazirmatn.variable}>{children}</body>
+    <html lang="fa" dir="rtl">
+      <body>{children}</body>
     </html>
   );
 }

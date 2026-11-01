@@ -1,33 +1,36 @@
 {
-  "name": "AION Agent API",
-  "api_version": "1",
-  "compiler_version": "1.5",
-  "description": "Machine-readable contract for the AION natural-language compiler API.",
-  "endpoint": "/api/agent",
-  "methods": {
-    "GET": {
-      "metadata": "/api/agent",
-      "compile": "/api/agent?prompt=<url-encoded-text>"
+  "name": "AION",
+  "api_version": "2",
+  "description": "Describe an AI personality and get a short system prompt that makes any LLM adopt it.",
+  "endpoints": {
+    "build": {
+      "method": "POST",
+      "path": "/api/agent",
+      "body": { "description": "string, up to 4000 characters" },
+      "response": { "ok": true, "persona": "object", "prompt": "string", "characters": "number" }
     },
-    "POST": {
-      "content_type": "application/json",
-      "body": {
-        "description": "string"
-      }
-    },
-    "OPTIONS": "CORS preflight"
-  },
-  "limits": {
-    "max_input_characters": 4000
-  },
-  "response": {
-    "success": {
-      "ok": true,
-      "api_version": "1",
-      "compiler_version": "1.5",
-      "aion": "string",
-      "prompt": "string",
-      "valid": true
+    "buildFromQuery": { "method": "GET", "path": "/api/agent?prompt=<url-encoded description>" },
+    "render": {
+      "method": "POST",
+      "path": "/api/render",
+      "body": { "persona": "object" },
+      "response": { "ok": true, "persona": "object", "prompt": "string", "characters": "number" }
     }
-  }
+  },
+  "persona": {
+    "language": "ISO 639-1 code, required",
+    "name": "string",
+    "role": "string",
+    "about": "string",
+    "traits": "warmth, humor, empathy, formality, directness, energy, curiosity, patience as integers 0-100",
+    "length": "short | balanced | detailed",
+    "emoji": "none | rare | often",
+    "relationship": "string",
+    "userName": "string",
+    "always": "string[]",
+    "never": "string[]",
+    "when": "{ if, then }[]"
+  },
+  "errors": { "shape": { "ok": false, "error": { "code": "string", "message": "string" } } },
+  "cors": true
 }

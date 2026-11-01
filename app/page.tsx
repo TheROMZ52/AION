@@ -1,329 +1,313 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { AION_VERSION } from "@/lib/aion/version";
+import { EMOJI_USES, LENGTHS, TRAIT_KEYS, emptyPersona, isBlank, validatePersona, type Persona, type TraitKey } from "@/lib/aion/schema";
+import { renderPrompt } from "@/lib/aion/render";
+import { PRESET_IDS, preset } from "./presets";
+import { STRINGS, type Locale } from "./strings";
 
-const STORAGE_KEYS = {
-  description: "aion-studio-description",
-  output: "aion-studio-output",
-  language: "aion-studio-language",
-  advanced: "aion-studio-advanced",
-  advancedConfig: "aion-studio-advanced-config",
-};
+const LANGUAGES = ["fa", "en", "ar", "tr", "de", "fr", "es", "ru"];
+const STORE = "aion:v2";
 
-const example = `⟪AION::1⟫
+function toLines(items: string[]): string {
+  return items.join("\n");
+}
 
-ᚫ AI
-  ↳ ID: FRIEND_AI
-  ↳ ROLE: FRIEND
+function fromLines(value: string): string[] {
+  return value.split("\n").map((line) => line.trim()).filter(Boolean);
+}
 
-  ◉ MIND {
-      warmth   :: 92
-      humor    :: 78
-      empathy  :: 90
-      energy   :: 86
-      formal   :: 18
-  }
+function whenToLines(persona: Persona): string {
+  return persona.when.map((entry) => `${entry.if} => ${entry.then}`).join("\n");
+}
 
-  ◉ VOICE {
-      lang     :: FA
-      mode     :: CASUAL
-      emoji    :: SMART
-      response :: NATURAL
-  }
+function whenFromLines(value: string) {
+  return fromLines(value).flatMap((line) => {
+    const index = line.indexOf("=>");
+    if (index === -1) return [];
+    const cond = line.slice(0, index).trim();
+    const action = line.slice(index + 2).trim();
+    return cond && action ? [{ if: cond, then: action }] : [];
+  });
+}
 
-  ◉ REACT {
-      USER[SAD] → HUMOR[-40] → EMPATHY[+30]
-  }
-
-⟫`;
-
-const quickPrompts = {
-  en: [
-    ["Friendly", "A warm, funny and curious AI that talks like a close friend, but knows when to be serious."],
-    ["Professional", "A clear, calm and professional AI that is concise, helpful and respectful."],
-    ["Adaptive", "A natural AI that adapts its tone to my mood, stays empathetic, and becomes serious when needed."],
-  ],
-  fa: [
-    ["دوستانه", "یک هوش مصنوعی گرم، شوخ‌طبع و کنجکاو که مثل یک دوست صمیمی حرف بزند، ولی بداند چه وقت جدی باشد."],
-    ["حرفه‌ای", "یک هوش مصنوعی واضح، آرام و حرفه‌ای که پاسخ‌های دقیق، مفید و محترمانه بدهد."],
-    ["سازگار", "یک هوش مصنوعی طبیعی که لحنش را با حال من سازگار کند، همدل باشد و وقتی لازم است جدی رفتار کند."],
-  ],
-} as const;
-
-type AdvancedConfig = {
-  goal: string;
-  role: string;
-  relationship: string;
-  language: string;
-  tone: string;
-  responseLength: string;
-  emoji: string;
-  warmth: number;
-  humor: number;
-  empathy: number;
-  curiosity: number;
-  energy: number;
-  constraints: string;
-};
-
-const defaultAdvanced: AdvancedConfig = {
-  goal: "",
-  role: "",
-  relationship: "",
-  language: "",
-  tone: "",
-  responseLength: "",
-  emoji: "",
-  warmth: 70,
-  humor: 60,
-  empathy: 70,
-  curiosity: 60,
-  energy: 60,
-  constraints: "",
-};
-
-function AionMark() {
+function Mark() {
   return (
-    <span className="brand-mark" aria-hidden="true">
-      <svg viewBox="0 0 40 40" role="img">
-        <defs>
-          <linearGradient id="aion-mark-gradient" x1="8" y1="5" x2="33" y2="36" gradientUnits="userSpaceOnUse">
-            <stop offset="0" stopColor="#d8b8ff" />
-            <stop offset="0.48" stopColor="#a56cff" />
-            <stop offset="1" stopColor="#6d35e9" />
-          </linearGradient>
-        </defs>
-        <path d="M20 5.5c-7.2 0-12.7 4.5-12.7 11.1 0 5.4 3.3 8.8 8 9.9-1.6 1.8-2.7 4.2-2.7 7.3 0 1 .6 1.7 1.6 1.7 3.2 0 6.1-2.1 7.8-5.1 1.2-2 2-4.5 2-7.4v-1.5h3.3v5.1c0 2.2 1.2 3.4 3.1 3.4 2 0 3.3-1.3 3.3-3.5V17.1C33.7 10.2 28.2 5.5 20 5.5Zm6.3 12.9h-6.2c-2.8 0-4.8-1.1-4.8-3.3 0-2.6 2.2-4.3 5.1-4.3 3.8 0 5.9 2.3 5.9 6.1v1.5Z" fill="url(#aion-mark-gradient)" />
-        <circle cx="29.8" cy="8.2" r="2.1" fill="#e5d4ff" />
-      </svg>
-    </span>
+    <svg viewBox="0 0 40 40" role="img" aria-label="AION">
+      <defs>
+        <linearGradient id="aion-mark" x1="8" y1="5" x2="33" y2="36" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#d8b8ff" />
+          <stop offset="0.48" stopColor="#a56cff" />
+          <stop offset="1" stopColor="#6d35e9" />
+        </linearGradient>
+      </defs>
+      <path
+        d="M20 5.5c-7.2 0-12.7 4.5-12.7 11.1 0 5.4 3.3 8.8 8 9.9-1.6 1.8-2.7 4.2-2.7 7.3 0 1 .6 1.7 1.6 1.7 3.2 0 6.1-2.1 7.8-5.1 1.2-2 2-4.5 2-7.4v-1.5h3.3v5.1c0 2.2 1.2 3.4 3.1 3.4 2 0 3.3-1.3 3.3-3.5V17.1C33.7 10.2 28.2 5.5 20 5.5Zm6.3 12.9h-6.2c-2.8 0-4.8-1.1-4.8-3.3 0-2.6 2.2-4.3 5.1-4.3 3.8 0 5.9 2.3 5.9 6.1v1.5Z"
+        fill="url(#aion-mark)"
+      />
+    </svg>
   );
 }
 
-export default function Home() {
+export default function Studio() {
+  const [locale, setLocale] = useState<Locale>("fa");
   const [description, setDescription] = useState("");
-  const [output, setOutput] = useState(example);
-  const [copied, setCopied] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [persona, setPersona] = useState<Persona>(() => emptyPersona("fa"));
+  const [tab, setTab] = useState<"prompt" | "card">("prompt");
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [language, setLanguage] = useState<"en" | "fa">("en");
-  const [hydrated, setHydrated] = useState(false);
-  const [advancedOpen, setAdvancedOpen] = useState(false);
-  const [advanced, setAdvanced] = useState<AdvancedConfig>(defaultAdvanced);
+  const [copied, setCopied] = useState(false);
+  const [ready, setReady] = useState(false);
+
+  const t = STRINGS[locale];
 
   useEffect(() => {
     try {
-      const savedDescription = localStorage.getItem(STORAGE_KEYS.description);
-      const savedOutput = localStorage.getItem(STORAGE_KEYS.output);
-      const savedLanguage = localStorage.getItem(STORAGE_KEYS.language);
-      const savedAdvanced = localStorage.getItem(STORAGE_KEYS.advanced);
-      const savedConfig = localStorage.getItem(STORAGE_KEYS.advancedConfig);
-      if (savedDescription !== null) setDescription(savedDescription);
-      if (savedOutput !== null) setOutput(savedOutput);
-      if (savedLanguage === "fa" || savedLanguage === "en") setLanguage(savedLanguage);
-      if (savedAdvanced === "true") setAdvancedOpen(true);
-      if (savedConfig) setAdvanced({ ...defaultAdvanced, ...JSON.parse(savedConfig) });
+      const saved = JSON.parse(localStorage.getItem(STORE) ?? "null");
+      if (saved) {
+        if (saved.locale === "fa" || saved.locale === "en") setLocale(saved.locale);
+        if (typeof saved.description === "string") setDescription(saved.description);
+        const checked = validatePersona(saved.persona);
+        if (checked.ok) setPersona(checked.persona);
+      }
     } catch {
-      // Ignore malformed local Studio state and keep safe defaults.
-    } finally {
-      setHydrated(true);
+      localStorage.removeItem(STORE);
     }
+    setReady(true);
   }, []);
 
   useEffect(() => {
-    if (!hydrated) return;
-    localStorage.setItem(STORAGE_KEYS.description, description);
-    localStorage.setItem(STORAGE_KEYS.output, output);
-    localStorage.setItem(STORAGE_KEYS.language, language);
-    localStorage.setItem(STORAGE_KEYS.advanced, String(advancedOpen));
-    localStorage.setItem(STORAGE_KEYS.advancedConfig, JSON.stringify(advanced));
-  }, [description, output, language, advancedOpen, advanced, hydrated]);
+    document.documentElement.lang = locale;
+    document.documentElement.dir = locale === "fa" ? "rtl" : "ltr";
+  }, [locale]);
 
-  const hasInput = useMemo(() => description.trim().length > 0, [description]);
-  const hasAdvancedInput = useMemo(() => {
-    return Object.entries(advanced).some(([key, value]) => key === "constraints" || typeof value === "string" ? String(value).trim().length > 0 : value !== defaultAdvanced[key as keyof AdvancedConfig]);
-  }, [advanced]);
-  const isPersian = /[\u0600-\u06FF]/.test(description);
-  const isRtl = isPersian || language === "fa";
-  const remaining = Math.max(0, 4000 - description.length);
-
-  const t = language === "fa" ? {
-    studio: "استودیو", how: "چطور کار می‌کند", docs: "مستندات", hero: "به هوشت", hero2: "شخصیت بده.",
-    intro: "با زبان خودت توضیح بده می‌خواهی هوشت چطور فکر کند، حرف بزند و رفتار کند. AION حرف‌هایت را به یک تعریف ساختاریافته از شخصیت تبدیل می‌کند.",
-    build: "ساخت شخصیت", see: "AION چطور کار می‌کند", describe: "AI خودت را توصیف کن", hint: "با زبان طبیعی توضیح بده چه شخصیتی می‌خواهی.",
-    natural: "زبان طبیعی", example: "یک نمونه امتحان کن ✦", generate: "ساخت AION", compiling: "در حال کامپایل…", valid: "✓ معتبر",
-    your: "AION شما", structured: "تعریف ساختاریافته شخصیت.", idea: "ایده اصلی", in: "نیت انسان در.", out: "شخصیت AI بیرون.",
-    describeStep: "توصیف", describeText: "با زبان ساده بنویس چه می‌خواهی. نیازی به یادگیری سینتکس نیست.",
-    compile: "کامپایل", compileText: "AION نیت تو را به رفتار دقیق و ساختاریافته تبدیل می‌کند.", use: "همه‌جا استفاده کن", useText: "تعریف شخصیت را به مدل، اپ یا ایجنت خودت ببر.",
-    tagline: "زبانی برای دادن شخصیت به هوش مصنوعی.", made: "ساخته‌شده توسط TheROMZ52", clear: "پاک کردن", chars: "حرف باقی‌مانده",
-    copy: "کپی", copied: "کپی شد ✓", download: "دانلود .aion", shortcut: "Ctrl/⌘ + Enter",
-    advanced: "حالت پیشرفته", advancedHint: "جزئیات بیشتری بده تا AION نیتت را دقیق‌تر مدل کند.", close: "بستن", reset: "بازنشانی", optional: "اختیاری",
-    goal: "هدف", role: "نقش AI", relationship: "رابطه", lang: "زبان", tone: "لحن", length: "طول پاسخ", emoji: "ایموجی",
-    personality: "شدت شخصیت", warmth: "گرمی", humor: "شوخ‌طبعی", empathy: "همدلی", curiosity: "کنجکاوی", energy: "انرژی", constraints: "محدودیت‌ها",
-    goalPh: "مثلاً کمک آموزشی، همراهی، برنامه‌نویسی…", rolePh: "مثلاً دوست، معلم، مهندس…", relationshipPh: "مثلاً دوست صمیمی و محترمانه", constraintsPh: "چه چیزهایی را انجام ندهد؟",
-    auto: "خودکار", casual: "خودمانی", naturalTone: "طبیعی", formal: "رسمی", professional: "حرفه‌ای", short: "کوتاه", medium: "متوسط", long: "مفصل", smart: "هوشمند", none: "خاموش", contextual: "متناسب با موضوع",
-    advancedActive: "تنظیمات پیشرفته فعال است",
-  } : {
-    studio: "Studio", how: "How it works", docs: "Docs", hero: "Give your AI", hero2: "a personality.",
-    intro: "Describe how you want your AI to think, speak and behave. AION turns your words into a structured personality definition.",
-    build: "Build a personality", see: "See how AION works", describe: "Describe your AI", hint: "Tell AION what you have in mind.",
-    natural: "Natural language", example: "Try an example ✦", generate: "Generate AION", compiling: "Compiling…", valid: "✓ VALID",
-    your: "Your AION", structured: "Structured personality definition.", idea: "THE IDEA", in: "Human intent in.", out: "AI personality out.",
-    describeStep: "Describe", describeText: "Write what you want in plain language. No syntax to learn.",
-    compile: "Compile", compileText: "AION maps your intent into precise, structured behavior.", use: "Use anywhere", useText: "Take the personality definition to your model, app or agent.",
-    tagline: "A language for giving AI a personality.", made: "Made by TheROMZ52", clear: "Clear", chars: "characters left",
-    copy: "Copy", copied: "Copied ✓", download: "Download .aion", shortcut: "Ctrl/⌘ + Enter",
-    advanced: "Advanced mode", advancedHint: "Add more structure so AION can model your intent more precisely.", close: "Close", reset: "Reset", optional: "Optional",
-    goal: "Goal", role: "AI role", relationship: "Relationship", lang: "Language", tone: "Tone", length: "Response length", emoji: "Emoji",
-    personality: "Personality intensity", warmth: "Warmth", humor: "Humor", empathy: "Empathy", curiosity: "Curiosity", energy: "Energy", constraints: "Constraints",
-    goalPh: "e.g. tutoring, companionship, coding…", rolePh: "e.g. friend, teacher, engineer…", relationshipPh: "e.g. close but respectful friend", constraintsPh: "What should it avoid?",
-    auto: "Auto", casual: "Casual", naturalTone: "Natural", formal: "Formal", professional: "Professional", short: "Short", medium: "Medium", long: "Detailed", smart: "Smart", none: "Off", contextual: "Contextual",
-    advancedActive: "Advanced settings active",
-  };
-
-  function setAdvancedField<K extends keyof AdvancedConfig>(key: K, value: AdvancedConfig[K]) {
-    setAdvanced((current) => ({ ...current, [key]: value }));
-  }
-
-  function buildCompilerInput() {
-    if (!advancedOpen || !hasAdvancedInput) return description.trim();
-    const lines = [description.trim(), "", "[ADVANCED CONTEXT]"];
-    const add = (label: string, value: string | number) => {
-      if (typeof value === "string" && !value.trim()) return;
-      lines.push(`${label}: ${value}`);
-    };
-    add("Goal", advanced.goal);
-    add("AI role", advanced.role);
-    add("Relationship", advanced.relationship);
-    add("Language", advanced.language);
-    add("Tone", advanced.tone);
-    add("Response length", advanced.responseLength);
-    add("Emoji", advanced.emoji);
-    if (advanced.warmth !== defaultAdvanced.warmth) add("Warmth", advanced.warmth);
-    if (advanced.humor !== defaultAdvanced.humor) add("Humor", advanced.humor);
-    if (advanced.empathy !== defaultAdvanced.empathy) add("Empathy", advanced.empathy);
-    if (advanced.curiosity !== defaultAdvanced.curiosity) add("Curiosity", advanced.curiosity);
-    if (advanced.energy !== defaultAdvanced.energy) add("Energy", advanced.energy);
-    add("Constraints", advanced.constraints);
-    return lines.join("\n");
-  }
-
-  async function generate() {
-    if ((!hasInput && !hasAdvancedInput) || loading) return;
-    setLoading(true); setError("");
+  useEffect(() => {
+    if (!ready) return;
     try {
-      const response = await fetch("/api/generate", {
+      localStorage.setItem(STORE, JSON.stringify({ locale, description, persona }));
+    } catch {}
+  }, [ready, locale, description, persona]);
+
+  const prompt = useMemo(() => (isBlank(persona) ? "" : renderPrompt(persona)), [persona]);
+  const card = useMemo(() => JSON.stringify(persona, null, 2), [persona]);
+  const output = tab === "prompt" ? prompt : card;
+
+  const patch = (changes: Partial<Persona>) => setPersona((current) => ({ ...current, ...changes }));
+
+  const setTrait = (key: TraitKey, value: number | undefined) =>
+    setPersona((current) => {
+      const traits = { ...current.traits };
+      if (value === undefined) delete traits[key];
+      else traits[key] = value;
+      return { ...current, traits };
+    });
+
+  const optional = (key: "name" | "role" | "about" | "relationship" | "userName", value: string) =>
+    setPersona((current) => {
+      const next = { ...current };
+      if (value) next[key] = value;
+      else delete next[key];
+      return next;
+    });
+
+  async function build() {
+    if (busy) return;
+    setError("");
+    if (!description.trim()) {
+      setError(t.errors.missing_description);
+      return;
+    }
+    setBusy(true);
+    try {
+      const response = await fetch("/api/agent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ description: buildCompilerInput() }),
+        body: JSON.stringify({ description }),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Generation failed.");
-      setOutput(data.aion);
-      document.getElementById("output")?.scrollIntoView({ behavior: "smooth", block: "center" });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Generation failed.");
-    } finally { setLoading(false); }
+      if (!response.ok || !data.ok) {
+        setError(t.errors[String(data?.error?.code)] ?? t.errors.upstream);
+        return;
+      }
+      const checked = validatePersona(data.persona);
+      if (checked.ok) {
+        setPersona(checked.persona);
+        setTab("prompt");
+      }
+    } catch {
+      setError(t.errors.network);
+    } finally {
+      setBusy(false);
+    }
   }
 
-  function clearStudio() {
-    setDescription(""); setOutput(example); setError(""); setAdvanced(defaultAdvanced); setAdvancedOpen(false);
+  async function copy() {
+    if (!output) return;
+    try {
+      await navigator.clipboard.writeText(output);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1400);
+    } catch {}
   }
-
-  async function copyOutput() {
-    await navigator.clipboard.writeText(output);
-    setCopied(true); setTimeout(() => setCopied(false), 1500);
-  }
-
-  function downloadOutput() {
-    const blob = new Blob([output], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = url; a.download = "personality.aion"; a.click(); URL.revokeObjectURL(url);
-  }
-
-  const selectOptions = {
-    language: [["AUTO", t.auto], ["FA", "فارسی"], ["EN", "English"]],
-    tone: [["CASUAL", t.casual], ["NATURAL", t.naturalTone], ["FORMAL", t.formal], ["PROFESSIONAL", t.professional]],
-    responseLength: [["SHORT", t.short], ["MEDIUM", t.medium], ["LONG", t.long]],
-    emoji: [["SMART", t.smart], ["NONE", t.none], ["CONTEXTUAL", t.contextual]],
-  } as const;
 
   return (
-    <main className="shell" dir={language === "fa" ? "rtl" : "ltr"}>
-      <nav className="nav">
-        <div className="brand"><AionMark /><span>AION</span></div>
-        <div className="nav-links"><a href="#studio">{t.studio}</a><a href="#how">{t.how}</a><a href="#docs">{t.docs}</a></div>
-        <div className="nav-actions"><button className="lang" onClick={() => setLanguage(language === "en" ? "fa" : "en")}>{language === "en" ? "FA" : "EN"}</button><a className="ghost" href="https://github.com/TheROMZ52/AION" target="_blank" rel="noreferrer">GitHub ↗</a></div>
-      </nav>
+    <main className="shell">
+      <header className="nav">
+        <div className="brand">
+          <span className="brand-mark"><Mark /></span>
+          <span>AION</span>
+        </div>
+        <button className="lang" onClick={() => setLocale(locale === "fa" ? "en" : "fa")} aria-label="Language">
+          {locale === "fa" ? "EN" : "فا"}
+        </button>
+      </header>
 
       <section className="hero">
-        <div className="eyebrow"><span /> AI PERSONALITY LANGUAGE</div>
-        <h1>{t.hero}<br /><em>{t.hero2}</em></h1>
-        <p>{t.intro}</p>
-        <div className="hero-actions"><a className="primary" href="#studio">{t.build} <span>→</span></a><a className="secondary" href="#how">{t.see}</a></div>
+        <h1>{t.tagline}</h1>
       </section>
 
-      <section className="studio" id="studio">
-        <div className="section-label"><span>01</span> AION STUDIO</div>
-        <div className="workspace">
-          <div className="panel input-panel">
-            <div className="panel-head"><div><strong>{t.describe}</strong><small>{t.hint}</small></div><span className="status-dot">●</span></div>
-            <div className="prompt-toolbar">
-              <div className="prompt-chips">
-                {quickPrompts[language].map(([label, prompt]) => <button key={label} type="button" className="prompt-chip" onClick={() => setDescription(prompt)}>{label}</button>)}
-              </div>
-              <button type="button" className="clear-input" onClick={clearStudio} disabled={!description && output === example && !hasAdvancedInput}>{t.clear}</button>
-            </div>
-            <textarea dir={isRtl ? "rtl" : "ltr"} lang={isRtl ? "fa" : "en"} maxLength={4000} value={description} onChange={(e) => setDescription(e.target.value)} onKeyDown={(e) => { if ((e.ctrlKey || e.metaKey) && e.key === "Enter") generate(); }} placeholder={language === "fa" ? "«مثلاً می‌خوام یک هوش مصنوعی داشته باشم که مثل یک دوست صمیمی حرف بزنه؛ شوخ‌طبع و کنجکاو باشه، ولی وقتی موضوع جدی شد، بدونه چطور رفتار کنه…»" : '“I want an AI that feels like a close friend.\nIt should be funny, curious and casual,\nbut know when to be serious...”'} />
-            <div className="input-foot"><span>{t.natural}</span><span className="input-meta"><span>{remaining} {t.chars}</span><button type="button" onClick={() => setDescription(quickPrompts[language][0][1])}>{t.example}</button><kbd>{t.shortcut}</kbd></span></div>
-
-            <div className={`advanced-box ${advancedOpen ? "is-open" : ""}`}>
-              <button type="button" className="advanced-toggle" aria-expanded={advancedOpen} aria-controls="advanced-fields" onClick={() => setAdvancedOpen((open) => !open)}>
-                <span><b>✦</b>{t.advanced}<small>{advancedOpen ? t.close : t.advancedHint}</small></span><i aria-hidden="true">{advancedOpen ? "−" : "+"}</i>
+      <section className="workspace">
+        <div className="panel">
+          <div className="panel-head">
+            <strong>{t.intent}</strong>
+          </div>
+          <div className="chips">
+            {PRESET_IDS.map((id) => (
+              <button key={id} className="chip" onClick={() => setPersona(preset(id, locale))}>
+                {t.presets[id]}
               </button>
-              {advancedOpen && <div id="advanced-fields" className="advanced-fields">
-                <div className="advanced-grid">
-                  <label><span>{t.goal} <small>{t.optional}</small></span><input value={advanced.goal} onChange={(e) => setAdvancedField("goal", e.target.value)} placeholder={t.goalPh} /></label>
-                  <label><span>{t.role} <small>{t.optional}</small></span><input value={advanced.role} onChange={(e) => setAdvancedField("role", e.target.value)} placeholder={t.rolePh} /></label>
-                  <label><span>{t.relationship} <small>{t.optional}</small></span><input value={advanced.relationship} onChange={(e) => setAdvancedField("relationship", e.target.value)} placeholder={t.relationshipPh} /></label>
-                  <label><span>{t.lang}</span><select value={advanced.language} onChange={(e) => setAdvancedField("language", e.target.value)}><option value="">{t.auto}</option>{selectOptions.language.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-                  <label><span>{t.tone}</span><select value={advanced.tone} onChange={(e) => setAdvancedField("tone", e.target.value)}><option value="">{t.auto}</option>{selectOptions.tone.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-                  <label><span>{t.length}</span><select value={advanced.responseLength} onChange={(e) => setAdvancedField("responseLength", e.target.value)}><option value="">{t.auto}</option>{selectOptions.responseLength.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-                  <label><span>{t.emoji}</span><select value={advanced.emoji} onChange={(e) => setAdvancedField("emoji", e.target.value)}><option value="">{t.auto}</option>{selectOptions.emoji.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-                </div>
-                <div className="advanced-personality"><div className="advanced-subhead"><strong>{t.personality}</strong><button type="button" onClick={() => setAdvanced((current) => ({ ...current, warmth: 70, humor: 60, empathy: 70, curiosity: 60, energy: 60 }))}>{t.reset}</button></div>
-                  {([["warmth", t.warmth], ["humor", t.humor], ["empathy", t.empathy], ["curiosity", t.curiosity], ["energy", t.energy]] as const).map(([key, label]) => <label className="range-row" key={key}><span>{label}</span><input type="range" min="0" max="100" value={advanced[key]} onChange={(e) => setAdvancedField(key, Number(e.target.value))} /><output>{advanced[key]}</output></label>)}
-                </div>
-                <label className="advanced-constraints"><span>{t.constraints} <small>{t.optional}</small></span><textarea value={advanced.constraints} onChange={(e) => setAdvancedField("constraints", e.target.value)} placeholder={t.constraintsPh} /></label>
-              </div>}
+            ))}
+          </div>
+          <textarea
+            dir="auto"
+            value={description}
+            placeholder={t.placeholder}
+            onChange={(event) => setDescription(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) build();
+            }}
+          />
+          <div className="panel-foot">
+            <span className="error" role="alert">{error}</span>
+            <div className="actions">
+              <button className="ghost" disabled={!description} onClick={() => { setDescription(""); setError(""); }}>
+                {t.clear}
+              </button>
+              <button className="primary" disabled={busy} onClick={build}>
+                {busy ? t.building : t.build}
+              </button>
+            </div>
+          </div>
+
+          <div className="editor">
+            <div className="grid2">
+              <label>
+                <span>{t.fields.name}</span>
+                <input dir="auto" value={persona.name ?? ""} onChange={(event) => optional("name", event.target.value)} />
+              </label>
+              <label>
+                <span>{t.fields.role}</span>
+                <input dir="auto" value={persona.role ?? ""} onChange={(event) => optional("role", event.target.value)} />
+              </label>
+              <label>
+                <span>{t.fields.language}</span>
+                <select value={persona.language} onChange={(event) => patch({ language: event.target.value })}>
+                  {LANGUAGES.map((code) => (
+                    <option key={code} value={code}>{code.toUpperCase()}</option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                <span>{t.fields.userName}</span>
+                <input dir="auto" value={persona.userName ?? ""} onChange={(event) => optional("userName", event.target.value)} />
+              </label>
+              <label>
+                <span>{t.fields.length}</span>
+                <select value={persona.length ?? ""} onChange={(event) => patch({ length: (event.target.value || undefined) as Persona["length"] })}>
+                  <option value="">{t.unset}</option>
+                  {LENGTHS.map((value) => (
+                    <option key={value} value={value}>{t.lengths[value]}</option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                <span>{t.fields.emoji}</span>
+                <select value={persona.emoji ?? ""} onChange={(event) => patch({ emoji: (event.target.value || undefined) as Persona["emoji"] })}>
+                  <option value="">{t.unset}</option>
+                  {EMOJI_USES.map((value) => (
+                    <option key={value} value={value}>{t.emojis[value]}</option>
+                  ))}
+                </select>
+              </label>
             </div>
 
-            <button className="generate" disabled={(!hasInput && !hasAdvancedInput) || loading} onClick={generate}>{loading ? t.compiling : t.generate} <span>⌘ ↵</span></button>
-            {advancedOpen && hasAdvancedInput && <p className="advanced-active">✦ {t.advancedActive}</p>}
-            {error && <p className="error">{error}</p>}
+            <label>
+              <span>{t.fields.about}</span>
+              <textarea className="small" dir="auto" rows={2} value={persona.about ?? ""} onChange={(event) => optional("about", event.target.value)} />
+            </label>
+            <label>
+              <span>{t.fields.relationship}</span>
+              <input dir="auto" value={persona.relationship ?? ""} onChange={(event) => optional("relationship", event.target.value)} />
+            </label>
+
+            <fieldset>
+              <legend>{t.fields.traits}</legend>
+              {TRAIT_KEYS.map((key) => {
+                const value = persona.traits[key];
+                return (
+                  <div key={key} className={`trait${value === undefined ? " off" : ""}`}>
+                    <span>{t.traits[key]}</span>
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={value ?? 50}
+                      aria-label={t.traits[key]}
+                      onChange={(event) => setTrait(key, Number(event.target.value))}
+                    />
+                    <button className="reset" onClick={() => setTrait(key, undefined)} disabled={value === undefined} aria-label={`${t.traits[key]} ✕`}>
+                      {value === undefined ? "–" : value}
+                    </button>
+                  </div>
+                );
+              })}
+            </fieldset>
+
+            <label>
+              <span>{t.fields.always} <em>{t.lineHint}</em></span>
+              <textarea className="small" dir="auto" rows={3} value={toLines(persona.always)} onChange={(event) => patch({ always: fromLines(event.target.value) })} />
+            </label>
+            <label>
+              <span>{t.fields.never} <em>{t.lineHint}</em></span>
+              <textarea className="small" dir="auto" rows={3} value={toLines(persona.never)} onChange={(event) => patch({ never: fromLines(event.target.value) })} />
+            </label>
+            <label>
+              <span>{t.fields.when} <em>{t.whenHint}</em></span>
+              <textarea className="small" dir="auto" rows={3} value={whenToLines(persona)} onChange={(event) => patch({ when: whenFromLines(event.target.value) })} />
+            </label>
           </div>
-          <div className="arrow">→</div>
-          <div className="panel output-panel" id="output">
-            <div className="panel-head"><div><strong>{t.your}</strong><small>{t.structured}</small></div><span className="valid">{t.valid}</span></div>
-            <pre><code>{output}</code></pre>
-            <div className="output-foot"><button onClick={copyOutput}>{copied ? t.copied : t.copy}</button><button onClick={downloadOutput}>{t.download}</button></div>
+        </div>
+
+        <div className="bridge" aria-hidden="true">{locale === "fa" ? "←" : "→"}</div>
+
+        <div className="panel sticky">
+          <div className="panel-head">
+            <div className="tabs" role="tablist">
+              <button role="tab" aria-selected={tab === "prompt"} onClick={() => setTab("prompt")}>{t.promptTab}</button>
+              <button role="tab" aria-selected={tab === "card"} onClick={() => setTab("card")}>{t.cardTab}</button>
+            </div>
+            <button className="ghost" disabled={!output} onClick={copy}>{copied ? t.copied : t.copy}</button>
+          </div>
+          {output ? (
+            <pre dir="auto" className="output">{output}</pre>
+          ) : (
+            <div className="placeholder">{t.empty}</div>
+          )}
+          <div className="panel-foot">
+            <span className="count">{output ? `${output.length} ${t.characters}` : ""}</span>
           </div>
         </div>
       </section>
-
-      <section className="how" id="how">
-        <div className="section-label"><span>02</span> {t.idea}</div>
-        <h2>{t.in}<br /><em>{t.out}</em></h2>
-        <div className="steps">
-          <article><b>01</b><h3>{t.describeStep}</h3><p>{t.describeText}</p></article>
-          <article><b>02</b><h3>{t.compile}</h3><p>{t.compileText}</p></article>
-          <article><b>03</b><h3>{t.use}</h3><p>{t.useText}</p></article>
-        </div>
-      </section>
-
-      <section className="docs-anchor" id="docs" aria-label="Documentation"><span>AION {AION_VERSION}</span><strong>{t.tagline}</strong></section>
-      <footer><span>{t.tagline}</span><span>{t.made}</span></footer>
     </main>
   );
 }

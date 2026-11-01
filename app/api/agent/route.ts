@@ -1,149 +1,58 @@
-import { NextResponse } from "next/server";
-import { POST as generateAion } from "../generate/route";
+import { generatePersona, renderPrompt } from "@/lib/aion";
+import { API_VERSION, fail, limited, preflight, reply } from "@/lib/aion/http";
 
-const API_VERSION = "1";
-const COMPILER_VERSION = "1.5";
-const MAX_INPUT_LENGTH = 4000;
+export const maxDuration = 60;
 
-function jsonHeaders() {
-  return {
-    "Cache-Control": "no-store",
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
-    "X-AION-API": API_VERSION,
-  };
+const MAX_INPUT = 4000;
+
+async function build(request: Request, description: unknown): Promise<Response> {
+  if (typeof description !== "string" || !description.trim()) {
+    return fail(400, "missing_description", "Send a non-empty description.");
+  }
+  if (description.length > MAX_INPUT) {
+    return fail(400, "too_long", `The description is limited to ${MAX_INPUT} characters.`);
+  }
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) return fail(503, "missing_key", "The server has no model key configured.");
+  if (limited(request)) return fail(429, "rate_limited", "Too many requests. Try again in a minute.");
+
+  const result = await generatePersona(description.trim(), {
+    apiKey,
+    model: process.env.AION_MODEL ?? "openai/gpt-oss-20b",
+    referer: process.env.NEXT_PUBLIC_SITE_URL,
+  });
+  if (!result.ok) return fail(result.status, result.code, result.message);
+
+  const prompt = renderPrompt(result.persona);
+  return reply({ ok: true, api_version: API_VERSION, persona: result.persona, prompt, characters: prompt.length });
 }
 
-function metadata(request: Request) {
-  const origin = new URL(request.url).origin;
-  return {
-    name: "AION Agent API",
-    api_version: API_VERSION,
-    compiler_version: COMPILER_VERSION,
-    description: "Natural language → validated AION → deterministic runtime prompt.",
-    endpoint: `${origin}/api/agent`,
-    methods: {
-      GET: "Use ?prompt=... for a simple request or omit the query for metadata.",
-      POST: "Send JSON: { description: string }.",
-      OPTIONS: "CORS preflight.",
-    },
-    input: {
-      content_type: "application/json",
-      field: "description",
-      max_characters: MAX_INPUT_LENGTH,
-    },
-    output: {
-      content_type: "application/json",
-      fields: ["aion", "prompt", "valid"],
-      valid: "true when the generated AION passes the deterministic compiler.",
-    },
-    links: {
-      manifest: `${origin}/aion-agent.json`,
-    },
-  };
-}
-
-async function forwardToCompiler(request: Request, description: string) {
-  const response = await generateAion(
-    new Request(new URL("/api/generate", request.url), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ description }),
-    }),
-  );
-
-  const body = await response.text();
-  let payload: unknown;
+export async function POST(request: Request): Promise<Response> {
+  let body: unknown;
   try {
-    payload = JSON.parse(body);
+    body = await request.json();
   } catch {
-    return NextResponse.json(
-      { error: "Compiler returned a non-JSON response." },
-      { status: 502, headers: jsonHeaders() },
-    );
+    return fail(400, "invalid_json", "The request body must be JSON.");
   }
-
-  if (!response.ok) {
-    return NextResponse.json(payload, {
-      status: response.status,
-      headers: jsonHeaders(),
-    });
-  }
-
-  return NextResponse.json(
-    {
-      ok: true,
-      api_version: API_VERSION,
-      compiler_version: COMPILER_VERSION,
-      ...(typeof payload === "object" && payload !== null ? payload : {}),
-    },
-    { headers: jsonHeaders() },
-  );
+  return build(request, (body as { description?: unknown } | null)?.description);
 }
 
-/**
- * Agent-facing AION API.
- *
- * GET without a prompt is a machine-readable capability document.
- * GET with ?prompt=... is a convenient one-request compilation path.
- */
-export async function GET(request: Request) {
+export async function GET(request: Request): Promise<Response> {
   const url = new URL(request.url);
-  const description =
-    url.searchParams.get("prompt") ??
-    url.searchParams.get("q") ??
-    url.searchParams.get("description") ??
-    "";
-
-  if (!description.trim()) {
-    return NextResponse.json(metadata(request), { headers: jsonHeaders() });
-  }
-
-  const normalized = description.trim();
-  if (normalized.length > MAX_INPUT_LENGTH) {
-    return NextResponse.json(
-      { ok: false, error: `Description is too long. Maximum length is ${MAX_INPUT_LENGTH} characters.` },
-      { status: 400, headers: jsonHeaders() },
-    );
-  }
-
-  return forwardToCompiler(request, normalized);
+  const description = url.searchParams.get("prompt");
+  if (description !== null) return build(request, description);
+  return reply({
+    name: "AION",
+    api_version: API_VERSION,
+    endpoints: {
+      "POST /api/agent": "{ description } -> { persona, prompt }",
+      "GET /api/agent?prompt=": "same as POST, description in the query",
+      "POST /api/render": "{ persona } -> { prompt }, no model call",
+    },
+    manifest: `${url.origin}/aion-agent.json`,
+  });
 }
 
-export async function POST(request: Request) {
-  try {
-    const body = await request.json();
-    const description =
-      typeof body?.description === "string"
-        ? body.description.trim()
-        : typeof body?.prompt === "string"
-          ? body.prompt.trim()
-          : "";
-
-    if (!description) {
-      return NextResponse.json(
-        { ok: false, error: "Description is required." },
-        { status: 400, headers: jsonHeaders() },
-      );
-    }
-
-    if (description.length > MAX_INPUT_LENGTH) {
-      return NextResponse.json(
-        { ok: false, error: `Description is too long. Maximum length is ${MAX_INPUT_LENGTH} characters.` },
-        { status: 400, headers: jsonHeaders() },
-      );
-    }
-
-    return forwardToCompiler(request, description);
-  } catch {
-    return NextResponse.json(
-      { ok: false, error: "Request body must be valid JSON." },
-      { status: 400, headers: jsonHeaders() },
-    );
-  }
-}
-
-export function OPTIONS() {
-  return new Response(null, { status: 204, headers: jsonHeaders() });
+export function OPTIONS(): Response {
+  return preflight();
 }
