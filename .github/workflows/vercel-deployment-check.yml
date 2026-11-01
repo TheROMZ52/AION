@@ -105,4 +105,4 @@ jobs:
             }
 
       - name: Report tracker result
-        run: echo "Vercel deployment status tracked: ${{ github.event.deployment_status.state }}"
+        run: 'echo "Vercel deployment status tracked: ${{ github.event.deployment_status.state }}"'
