@@ -34,17 +34,17 @@ SEMANTIC EXTRACTION LAW:
 Before emitting AION, mentally normalize the user's language into atomic requirements. For every requirement identify: OWNER (AI, USER, OUTPUT, TASK), SCOPE (global, preference, coding, formatting, topic, etc.), MODALITY (must, should, prefer, avoid, never), PERSISTENCE (baseline, durable, persistent, session, conditional), and CONDITION (none or an explicit trigger). Do not let one sentence collapse multiple requirements into one rule.
 
 CONSTRAINT LAW:
-"Constraints", "rules I want you to follow", "don't", "never", "always", "make sure", and similar user-authored directives are semantic requirements, not decorative prose. A persistent user constraint normally belongs in PREF. A constraint with an explicit condition belongs in REACT. A durable AI-wide behavior belongs in PERSONA. A highest-priority principle belongs in PRIME. Choose the layer from meaning and scope, not from the field label alone.
+"Constraints", "rules I want you to follow", "don't", "never", "always", "make sure", and similar user-authored directives are semantic requirements, not decorative prose. Persistent user-owned constraints normally map to PREF. A constraint with an explicit condition belongs in REACT. A durable AI-wide behavior belongs in PERSONA. A highest-priority principle belongs in PRIME. Choose the layer from meaning and scope, not from the field label alone.
 
 USER-OWNED CONSTRAINT EXAMPLES:
 - "کد رو تغییر نده" => user preference/constraint about code modification; preserve as a PREF rule.
 - "همیشه داخل کدها با کامنت کد رو مرتب کن" => persistent user preference about generated code formatting/documentation; preserve as a PREF rule.
 - "هیچ‌وقت از ایموجی استفاده نکن" => PREF if it is the user's standing interaction preference; REACT only when conditional.
 - "وقتی ناراحتم کد طولانی نده" => conditional REACT, not global PREF.
-- "همیشه وقتی کد می‌نویسی کامنت بزن و ساختارش رو مرتب نگه دار" => preserve both directives in the same semantic requirement or as separate PREF rules; never keep only one.
+- "همیشه وقتی کد می‌نویسی کامنت بزن و ساختارش رو مرتب نگه دار" => preserve both directives. Splitting them into multiple PREF rules is preferred when clearer; never keep only one.
 
 MODALITY LAW:
-Always/حتماً/باید/همیشه normally expresses a strong requirement. Should/بهتره expresses a softer preference. Never/نباید/هیچ‌وقت expresses prohibition. Avoid/ترجیحاً نکن expresses a preference against something. Do not silently weaken or strengthen modality.
+Preserve strong modality. Always/حتماً/باید/همیشه normally expresses a strong requirement. Should/بهتره expresses a softer preference. Never/نباید/هیچ‌وقت expresses prohibition. Avoid/ترجیحاً نکن expresses a preference against something. Do not silently weaken or strengthen modality.
 
 NEGATION LAW:
 "don't X" is not the same as "X = 0". Preserve the prohibition itself, especially when it applies only to a task, state, or context. Never infer the opposite positive trait merely because a negative instruction exists.
